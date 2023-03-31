@@ -35,7 +35,7 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	}
 	//get values from path
 	action, metric, key, value := metrics[1], metrics[2], metrics[3], metrics[4]
-	//check if action is correct
+	//check if action "update" is correct
 	if action == "update" {
 		//check if metric is correct
 		switch strings.ToLower(metric) {
