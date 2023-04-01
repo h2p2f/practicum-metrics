@@ -52,6 +52,10 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 					m.Storage.SetGauge(key, n)
 				}
 			}
+		default:
+			{
+				http.Error(w, "Bad request", http.StatusBadRequest)
+			}
 		}
 		//this code for debug
 		//for k, v := range m.Storage.GetAllCounters() {
@@ -60,5 +64,8 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 		//for k, v := range m.Storage.GetAllGauges() {
 		//	fmt.Println("key", k, "value", v)
 		//}
+		//fmt.Println("--------------------------------------------------")
+	} else {
+		http.Error(w, "Bad request", http.StatusBadRequest)
 	}
 }

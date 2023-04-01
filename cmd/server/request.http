@@ -7,3 +7,6 @@ POST http://localhost:8080/update/gauge/gaugeMetric/78
 POST http://localhost:8080/update/gauge/gaugeAnother/12
 ###
 POST http://localhost:8080/update/gauge/gaugeAnother/14
+
+###
+POST http://localhost:8080/update/gauge/gaugeAnother/678
