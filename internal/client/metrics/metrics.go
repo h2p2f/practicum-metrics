@@ -6,11 +6,13 @@ import (
 	"runtime"
 )
 
+//RuntimeMetrics is a struct that contains all the metrics that are being monitored
 type RuntimeMetrics struct {
 	gauge   map[string]float64
 	counter map[string]int64
 }
 
+//UrlMetrics is a function that returns a map of metrics and their values
 func (m *RuntimeMetrics) NewMetrics() {
 	m.gauge = make(map[string]float64)
 	m.counter = make(map[string]int64)
@@ -44,6 +46,7 @@ func (m *RuntimeMetrics) NewMetrics() {
 		"TotalAlloc"}
 
 	counterMetrics := []string{"Counter"}
+	//initialize metrics
 	for _, metric := range gaugeMetrics {
 		m.gauge[metric] = 0
 	}
@@ -51,6 +54,8 @@ func (m *RuntimeMetrics) NewMetrics() {
 		m.counter[metric] = 0
 	}
 }
+
+//Monitor is a function that monitors the metrics
 func (m *RuntimeMetrics) Monitor() {
 	//set up runtime metrics
 	var RtMetrics runtime.MemStats
@@ -85,6 +90,8 @@ func (m *RuntimeMetrics) Monitor() {
 	m.gauge["TotalAlloc"] = float64(RtMetrics.TotalAlloc)
 	m.counter["Counter"]++
 }
+
+//UrlMetrics is a function that returns a slice of urls that are generated from the metrics and their values
 func (m *RuntimeMetrics) UrlMetrics(host string) []string {
 	var urls []string
 	_, err := url.ParseRequestURI(host)

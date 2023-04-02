@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"practicum-metrics/internal/storage"
 	"strconv"
@@ -17,55 +19,107 @@ func NewMetricHandler(s storage.Storage) *MetricHandler {
 	return &MetricHandler{Storage: s}
 }
 
-// MainPage is a handler for metrics (POST requests)
+// UpdatePage is a handler for metrics (POST requests)
 // now it works only with requests like this: POST http://localhost:8080/update/gauge/gaugeMetric/78
-func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
+func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	//check method
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	//check path, separate it and get values
-	path := r.URL.Path
-	metrics := strings.Split(path, "/")
-	//check if path is correct
-	if len(metrics) != 5 {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	//get values from path
-	action, metric, key, value := metrics[1], metrics[2], metrics[3], metrics[4]
-	//check if action "update" is correct
-	if action == "update" {
-		//check if metric is correct
-		switch strings.ToLower(metric) {
-		//if metric is correct, set value
-		case "counter":
-			{
-				if n, err := strconv.ParseInt(value, 10, 64); err == nil {
-					m.Storage.SetCounter(key, n)
-				}
-			}
-		case "gauge":
-			{
-				if n, err := strconv.ParseFloat(value, 64); err == nil {
-					m.Storage.SetGauge(key, n)
-				}
-			}
-		default:
-			{
-				http.Error(w, "Bad request", http.StatusBadRequest)
+	//get metric, key and value from request with chi's URLParam
+	metric := chi.URLParam(r, "metric")
+	key := chi.URLParam(r, "key")
+	value := chi.URLParam(r, "value")
+	//prepare metric and set value
+	switch strings.ToLower(metric) {
+	case "counter":
+		{
+			if n, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.Storage.SetCounter(key, n)
 			}
 		}
-		//this code for debug
-		//for k, v := range m.Storage.GetAllCounters() {
-		//	fmt.Println("key", k, "value", v)
-		//}
-		//for k, v := range m.Storage.GetAllGauges() {
-		//	fmt.Println("key", k, "value", v)
-		//}
-		//fmt.Println("--------------------------------------------------")
-	} else {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+	case "gauge":
+		{
+			if n, err := strconv.ParseFloat(value, 64); err == nil {
+				m.Storage.SetGauge(key, n)
+			}
+		}
+		//if metric is not counter or gauge, return bad request
+	default:
+		{
+			http.Error(w, "Bad request", http.StatusBadRequest)
+		}
+	}
+}
+
+// GetMetricValue is a handler for metrics (GET requests)
+// now it works only with requests like this: GET http://localhost:8080/value/gauge/gaugeMetric
+func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
+	//check method
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	//get metric and key from request with chi's URLParam
+	metric := chi.URLParam(r, "metric")
+	key := chi.URLParam(r, "key")
+	//get metric and return value
+	switch strings.ToLower(metric) {
+	case "counter":
+		{
+			n, err := m.Storage.GetCounter(key)
+			//if there is no such key, return not found
+			if err == false {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+			//if there is such key, return value
+			w.Header().Add("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(strconv.FormatInt(n, 10)))
+		}
+	case "gauge":
+		{
+			n, err := m.Storage.GetGauge(key)
+			//if there is no such key, return not found
+			if err == false {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+			//if there is such key, return value
+			w.Header().Add("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(strconv.FormatFloat(n[len(n)-1], 'f', -1, 64)))
+			//if mentors will say to return all values, uncomment this
+			//w.Write([]byte(fmt.Sprintf("%d", n)))
+		}
+		//if metric is not counter or gauge, return not found
+	default:
+		{
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+	}
+}
+
+// MainPage is a handler for metrics (GET requests to main page)
+func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	//prepare response
+	w.Header().Add("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("<h1>Metrics</h1>"))
+	//get all counters and gauges and write them to response
+	for k, v := range m.Storage.GetAllCounters() {
+		w.Write([]byte(fmt.Sprintf("<p> %s: %d</p>", k, v)))
+	}
+	for k, v := range m.Storage.GetAllGauges() {
+		w.Write([]byte(fmt.Sprintf("<p> %s: %f</p>", k, v[len(v)-1])))
+		//if mentors will say to return all values, uncomment this
+		//w.Write([]byte(fmt.Sprintf("<p> %s: %v</p>", k, v)))
 	}
 }
