@@ -21,7 +21,7 @@ func main() {
 		timeCounter++
 		//send metrics to server every 10 seconds
 		if timeCounter%5 == 0 {
-			urls := m.UrlMetrics(host)
+			urls := m.URLMetrics(host)
 			for _, url := range urls {
 				//send metrics to server with resty
 				client := resty.New()

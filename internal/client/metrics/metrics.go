@@ -92,19 +92,19 @@ func (m *RuntimeMetrics) Monitor() {
 }
 
 //UrlMetrics is a function that returns a slice of urls that are generated from the metrics and their values
-func (m *RuntimeMetrics) UrlMetrics(host string) []string {
+func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	var urls []string
 	_, err := url.ParseRequestURI(host)
 	if err != nil {
 		return nil
 	}
 	for metric, value := range m.gauge {
-		generatedUrl := fmt.Sprintf("%s/update/gauge/%s/%f", host, metric, value)
-		urls = append(urls, generatedUrl)
+		generatedURL := fmt.Sprintf("%s/update/gauge/%s/%f", host, metric, value)
+		urls = append(urls, generatedURL)
 	}
 	for metric, value := range m.counter {
-		generatedUrl := fmt.Sprintf("%s/update/counter/%s/%d", host, metric, value)
-		urls = append(urls, generatedUrl)
+		generatedURL := fmt.Sprintf("%s/update/counter/%s/%d", host, metric, value)
+		urls = append(urls, generatedURL)
 	}
 	return urls
 }

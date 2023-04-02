@@ -70,7 +70,7 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 		{
 			n, err := m.Storage.GetCounter(key)
 			//if there is no such key, return not found
-			if err == false {
+			if !err {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
@@ -83,7 +83,7 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 		{
 			n, err := m.Storage.GetGauge(key)
 			//if there is no such key, return not found
-			if err == false {
+			if !err {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
