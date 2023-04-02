@@ -28,7 +28,7 @@ func TestUrlMetrics(t *testing.T) {
 			var rt RuntimeMetrics
 			rt.NewMetrics()
 
-			got := rt.UrlMetrics(tt.url)
+			got := rt.URLMetrics(tt.url)
 
 			if reflect.TypeOf(got) != reflect.TypeOf(tt.want) {
 				t.Errorf("UrlMetrics() = %v, want %v", got, tt.want)
