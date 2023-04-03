@@ -2,12 +2,13 @@ package metrics
 
 import (
 	"fmt"
-	"net/url"
 	"runtime"
+	"sync"
 )
 
 //RuntimeMetrics is a struct that contains all the metrics that are being monitored
 type RuntimeMetrics struct {
+	mut     sync.RWMutex
 	gauge   map[string]float64
 	counter map[string]int64
 }
@@ -61,6 +62,9 @@ func (m *RuntimeMetrics) Monitor() {
 	var RtMetrics runtime.MemStats
 	//get runtime metrics
 	runtime.ReadMemStats(&RtMetrics)
+	//lock the mutex
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	m.gauge["Alloc"] = float64(RtMetrics.Alloc)
 	m.gauge["BuckHashSys"] = float64(RtMetrics.BuckHashSys)
 	m.gauge["Frees"] = float64(RtMetrics.Frees)
@@ -93,11 +97,12 @@ func (m *RuntimeMetrics) Monitor() {
 
 //UrlMetrics is a function that returns a slice of urls that are generated from the metrics and their values
 func (m *RuntimeMetrics) URLMetrics(host string) []string {
+	//lock the mutex
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+	//create a slice of urls
 	var urls []string
-	_, err := url.ParseRequestURI(host)
-	if err != nil {
-		return nil
-	}
+	//generate urls
 	for metric, value := range m.gauge {
 		generatedURL := fmt.Sprintf("%s/update/gauge/%s/%f", host, metric, value)
 		urls = append(urls, generatedURL)

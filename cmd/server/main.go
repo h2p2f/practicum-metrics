@@ -1,12 +1,16 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"practicum-metrics/internal/server/handlers"
 	"practicum-metrics/internal/storage"
 )
+
+var flagRunPort string
 
 func MetricRouter() chi.Router {
 	//create storage
@@ -22,6 +26,9 @@ func MetricRouter() chi.Router {
 	return r
 }
 func main() {
+	flag.StringVar(&flagRunPort, "a", ":8080", "port to run server on")
+	flag.Parse()
 	//start server
-	log.Fatal(http.ListenAndServe(":8080", MetricRouter()))
+	fmt.Println("Running server on", flagRunPort)
+	log.Fatal(http.ListenAndServe(flagRunPort, MetricRouter()))
 }
