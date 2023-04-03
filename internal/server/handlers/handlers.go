@@ -3,8 +3,8 @@ package handlers
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/h2p2f/practicum-metrics/internal/storage"
 	"net/http"
-	"practicum-metrics/internal/storage"
 	"strconv"
 	"strings"
 )

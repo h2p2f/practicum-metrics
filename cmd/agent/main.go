@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/h2p2f/practicum-metrics/internal/client/metrics"
 	"os"
-	"practicum-metrics/internal/client/metrics"
 	"strconv"
 	"time"
 )

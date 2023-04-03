@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
+	"github.com/h2p2f/practicum-metrics/internal/storage"
 	"log"
 	"net/http"
 	"os"
-	"practicum-metrics/internal/server/handlers"
-	"practicum-metrics/internal/storage"
 )
 
 var flagRunPort string
