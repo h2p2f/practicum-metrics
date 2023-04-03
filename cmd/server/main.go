@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
+	"os"
 	"practicum-metrics/internal/server/handlers"
 	"practicum-metrics/internal/storage"
 )
@@ -26,9 +27,13 @@ func MetricRouter() chi.Router {
 	return r
 }
 func main() {
+	//-----------------parse flags and env variables-----------------
 	flag.StringVar(&flagRunPort, "a", ":8080", "port to run server on")
 	flag.Parse()
-	//start server
+	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
+		flagRunPort = envAddress
+	}
+	//-----------------start server-----------------
 	fmt.Println("Running server on", flagRunPort)
 	log.Fatal(http.ListenAndServe(flagRunPort, MetricRouter()))
 }

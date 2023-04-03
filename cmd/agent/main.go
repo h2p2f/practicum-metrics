@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"os"
 	"practicum-metrics/internal/client/metrics"
+	"strconv"
 	"time"
 )
 
@@ -20,18 +22,38 @@ func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 	}
 }
 func main() {
+	//------------------flags and env variables------------------
+	//variables for flags
 	var r, p int
 	//parse flags
 	flag.StringVar(&flagRunPort, "a", ":8080", "port to run server on")
-	//DurationVar is not working, so I use IntVar with conversion to Duration
+	//DurationVar is not working, so I use IntVar with conversion to Duration. TODO: fix it
 	flag.IntVar(&r, "r", 10, "report to server interval in seconds")
 	flag.IntVar(&p, "p", 2, "pool interval in seconds")
 	flag.Parse()
-	//set reportInterval
-
+	//convert int to duration
 	reportInterval = time.Duration(r)
 	//set poolInterval
 	poolInterval = time.Duration(p)
+	//get env variables
+	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+		envReportInterval, err := strconv.Atoi(envReportInterval)
+		if err != nil {
+			panic(err)
+		}
+		reportInterval = time.Duration(envReportInterval)
+	}
+	if envPoolInterval := os.Getenv("POOL_INTERVAL"); envPoolInterval != "" {
+		envPoolInterval, err := strconv.Atoi(envPoolInterval)
+		if err != nil {
+			panic(err)
+		}
+		poolInterval = time.Duration(envPoolInterval)
+	}
+	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
+		flagRunPort = envAddress
+	}
+	//------------------start agent------------------
 	//set host
 	host := "http://localhost" + flagRunPort
 	fmt.Println("Running agent for server:", host)
