@@ -59,7 +59,7 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 		//if metric is not counter or gauge, return bad request
 	default:
 		{
-			http.Error(w, "Bad request", http.StatusBadRequest)
+			http.Error(w, "Not implemented", http.StatusNotImplemented)
 		}
 	}
 }
