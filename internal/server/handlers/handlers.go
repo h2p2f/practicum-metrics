@@ -35,14 +35,18 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	switch strings.ToLower(metric) {
 	case "counter":
 		{
-			n, err := strconv.ParseInt(value, 10, 64)
+			n, err := strconv.ParseInt(value, 0, 64)
 			if err != nil {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			//if n, err := strconv.ParseInt(value, 10, 64); err == nil {
-			m.Storage.SetCounter(key, n)
-			//}
+			currentValue, ok := m.Storage.GetCounter(key)
+			if !ok {
+				currentValue = 0
+				m.Storage.SetCounter(key, currentValue)
+			} else {
+				m.Storage.SetCounter(key, n+currentValue)
+			}
 		}
 	case "gauge":
 		{

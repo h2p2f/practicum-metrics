@@ -1,4 +1,4 @@
-POST http://localhost:8080/update/counter/someMetric/527
+POST http://localhost:8080/update/counter/someMetric/530
 ###
 POST http://localhost:8080/update/counter/anotherMetric/341
 ###
@@ -16,3 +16,6 @@ GET http://localhost:8080/value/gauge/gaugeAnother
 
 ###
 POST http://localhost:8080/update/gauge/gaugeAnother/none
+
+###
+GET http://localhost:8080/value/counter/someMetric

@@ -98,8 +98,8 @@ func (m *RuntimeMetrics) Monitor() {
 //UrlMetrics is a function that returns a slice of urls that are generated from the metrics and their values
 func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	//lock the mutex
-	m.mut.RLock()
-	defer m.mut.RUnlock()
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	//create a slice of urls
 	var urls []string
 	//generate urls
@@ -111,5 +111,6 @@ func (m *RuntimeMetrics) URLMetrics(host string) []string {
 		generatedURL := fmt.Sprintf("%s/update/counter/%s/%d", host, metric, value)
 		urls = append(urls, generatedURL)
 	}
+	m.counter["Counter"] = 0
 	return urls
 }

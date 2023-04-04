@@ -21,6 +21,7 @@ func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 		time.Sleep(pool * time.Second)
 	}
 }
+
 func main() {
 	//------------------flags and env variables------------------
 	//variables for flags
