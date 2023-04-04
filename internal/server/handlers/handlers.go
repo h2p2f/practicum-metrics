@@ -42,7 +42,6 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 			}
 			currentValue, ok := m.Storage.GetCounter(key)
 			if ok == false {
-				currentValue = 0
 				m.Storage.SetCounter(key, currentValue)
 			} else {
 				m.Storage.SetCounter(key, n+currentValue)
