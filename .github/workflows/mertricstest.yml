@@ -112,6 +112,7 @@ jobs:
             -source-path=. \
             -agent-binary-path=cmd/agent/agent
 
+
       - name: "Code increment #3"
         if: |
           github.ref == 'refs/heads/main' ||
@@ -132,6 +133,7 @@ jobs:
             -source-path=. \
             -agent-binary-path=cmd/agent/agent \
             -binary-path=cmd/server/server
+
 
 
       - name: "Code increment #4"
