@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"net/http/httptest"
-	"practicum-metrics/internal/storage"
 	"testing"
 )
 
