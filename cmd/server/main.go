@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
-	"github.com/h2p2f/practicum-metrics/internal/storage"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"log"
 	"net/http"
 	"os"
