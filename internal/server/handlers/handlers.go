@@ -35,15 +35,26 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	switch strings.ToLower(metric) {
 	case "counter":
 		{
-			if n, err := strconv.ParseInt(value, 10, 64); err == nil {
-				m.Storage.SetCounter(key, n)
+			n, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
 			}
+			//if n, err := strconv.ParseInt(value, 10, 64); err == nil {
+			m.Storage.SetCounter(key, n)
+			//}
 		}
 	case "gauge":
 		{
-			if n, err := strconv.ParseFloat(value, 64); err == nil {
-				m.Storage.SetGauge(key, n)
+			n, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
 			}
+
+			//if n, err := strconv.ParseFloat(value, 64); err == nil {
+			m.Storage.SetGauge(key, n)
+			//}
 		}
 		//if metric is not counter or gauge, return bad request
 	default:
