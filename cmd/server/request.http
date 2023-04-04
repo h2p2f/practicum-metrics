@@ -1,4 +1,4 @@
-POST http://localhost:8080/update/counter/someMetric/530
+POST http://localhost:8080/update/counter/someMetric/53
 ###
 POST http://localhost:8080/update/counter/anotherMetric/341
 ###

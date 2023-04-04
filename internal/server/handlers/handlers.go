@@ -41,11 +41,13 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			currentValue, ok := m.Storage.GetCounter(key)
-			if ok == false {
-				m.Storage.SetCounter(key, currentValue)
-			} else {
-				m.Storage.SetCounter(key, n+currentValue)
-			}
+			fmt.Println(currentValue, ok, n)
+			m.Storage.SetCounter(key, n+currentValue)
+			//if ok {
+			//	m.Storage.SetCounter(key, n+currentValue)
+			//} else {
+			//	m.Storage.SetCounter(key, currentValue)
+			//}
 		}
 	case "gauge":
 		{
