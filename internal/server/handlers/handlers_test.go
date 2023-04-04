@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+//test for Handlers
 func TestMetricHandler_UpdatePage(t *testing.T) {
 	type want struct {
 		statusCode   int
