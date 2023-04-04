@@ -46,7 +46,7 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   400,
+				statusCode:   501,
 				conttentType: "text/plain; charset=utf-8",
 			},
 		},
