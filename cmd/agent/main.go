@@ -82,6 +82,7 @@ func main() {
 				panic(err)
 			}
 			//I don't fully understand this code, but it works
+			//TODO: try test with blank variable, without the code below
 			fmt.Print(resp)
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -149,6 +150,115 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			r.ServeHTTP(w, reqGet)
 			if w.Code != tt.want.statusCode {
 				t.Errorf("MetricHandler.GetMetricValue() = %v, want %v", w.Code, tt.want.statusCode)
+			}
+		})
+	}
+}
+
+func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
+	type want struct {
+		statusCode   int
+		value        string
+		conttentType string
+	}
+	tests := []struct {
+		name        string
+		metric      string
+		metricName  string
+		metricValue string
+		want        want
+	}{
+		{
+			name:        "Positive test 1",
+			metric:      "counter",
+			metricName:  "test",
+			metricValue: "1",
+			want: want{
+				statusCode:   200,
+				value:        "1",
+				conttentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:        "Positive test 2",
+			metric:      "counter",
+			metricName:  "test",
+			metricValue: "2",
+			want: want{
+				statusCode:   200,
+				value:        "3",
+				conttentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:        "Positive test 3",
+			metric:      "counter",
+			metricName:  "test",
+			metricValue: "3",
+			want: want{
+				statusCode:   200,
+				value:        "6",
+				conttentType: "text/plain; charset=utf-8",
+			},
+		},
+	}
+	testStorage := storage.NewMemStorage()
+	handler := NewMetricHandler(testStorage)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reqPost := httptest.NewRequest("POST", "/update/"+tt.metric+"/"+tt.metricName+"/"+tt.metricValue, nil)
+			reqGet := httptest.NewRequest("GET", "/sum/"+tt.metric+"/"+tt.metricName, nil)
+			r := chi.NewRouter()
+
+			r.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
+			r.Get("/sum/{metric}/{key}", handler.GetMetricValue)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, reqPost)
+			w = httptest.NewRecorder()
+			r.ServeHTTP(w, reqGet)
+			if w.Body.String() != tt.want.value {
+				t.Errorf("MetricHandler.GetMetricCounterSum() = %v, want %v", w.Body.String(), tt.want.value)
+			}
+		})
+	}
+}
+
+func TestMetricHandler_MainPage(t *testing.T) {
+	type want struct {
+		statusCode   int
+		conttentType string
+		header       string
+	}
+	tests := []struct {
+		name string
+		want want
+	}{
+		{
+			name: "Positive test 1",
+			want: want{
+				statusCode:   200,
+				conttentType: "text/html",
+				header:       "<h1>Metrics</h1>",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/", nil)
+			r := chi.NewRouter()
+			testStorage := storage.NewMemStorage()
+			handler := NewMetricHandler(testStorage)
+			r.Get("/", handler.MainPage)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tt.want.statusCode {
+				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Code, tt.want.statusCode)
+			}
+			if w.Header().Get("Content-Type") != tt.want.conttentType {
+				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Header().Get("Content-Type"), tt.want.conttentType)
+			}
+			if !strings.Contains(w.Body.String(), tt.want.header) {
+				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Body.String(), tt.want.header)
 			}
 		})
 	}

@@ -43,11 +43,6 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 			currentValue, ok := m.Storage.GetCounter(key)
 			fmt.Println(currentValue, ok, n)
 			m.Storage.SetCounter(key, n+currentValue)
-			//if ok {
-			//	m.Storage.SetCounter(key, n+currentValue)
-			//} else {
-			//	m.Storage.SetCounter(key, currentValue)
-			//}
 		}
 	case "gauge":
 		{
@@ -56,10 +51,7 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-
-			//if n, err := strconv.ParseFloat(value, 64); err == nil {
 			m.Storage.SetGauge(key, n)
-			//}
 		}
 		//if metric is not counter or gauge, return bad request
 	default:
@@ -93,7 +85,10 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 			//if there is such key, return value
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(strconv.FormatInt(n, 10)))
+			_, er := w.Write([]byte(strconv.FormatInt(n, 10)))
+			if er != nil {
+				fmt.Println(err)
+			}
 		}
 	case "gauge":
 		{
@@ -106,7 +101,10 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 			//if there is such key, return value
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(strconv.FormatFloat(n[len(n)-1], 'f', -1, 64)))
+			_, er := w.Write([]byte(strconv.FormatFloat(n[len(n)-1], 'f', -1, 64)))
+			if er != nil {
+				fmt.Println(err)
+			}
 			//if mentors will say to return all values, uncomment this
 			//w.Write([]byte(fmt.Sprintf("%d", n)))
 		}
@@ -128,13 +126,22 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	//prepare response
 	w.Header().Add("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("<h1>Metrics</h1>"))
+	_, err := w.Write([]byte("<h1>Metrics</h1>"))
+	if err != nil {
+		fmt.Println(err)
+	}
 	//get all counters and gauges and write them to response
 	for k, v := range m.Storage.GetAllCounters() {
-		w.Write([]byte(fmt.Sprintf("<p> %s: %d</p>", k, v)))
+		_, err := w.Write([]byte(fmt.Sprintf("<p> %s: %d</p>", k, v)))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	for k, v := range m.Storage.GetAllGauges() {
-		w.Write([]byte(fmt.Sprintf("<p> %s: %f</p>", k, v[len(v)-1])))
+		_, err := w.Write([]byte(fmt.Sprintf("<p> %s: %f</p>", k, v[len(v)-1])))
+		if err != nil {
+			fmt.Println(err)
+		}
 		//if mentors will say to return all values, uncomment this
 		//w.Write([]byte(fmt.Sprintf("<p> %s: %v</p>", k, v)))
 	}
