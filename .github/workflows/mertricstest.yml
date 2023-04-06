@@ -112,7 +112,6 @@ jobs:
             -source-path=. \
             -agent-binary-path=cmd/agent/agent
 
-
       - name: "Code increment #3"
         if: |
           github.ref == 'refs/heads/main' ||
@@ -135,7 +134,6 @@ jobs:
             -binary-path=cmd/server/server
 
 
-
       - name: "Code increment #4"
         if: |
           github.ref == 'refs/heads/main' ||
@@ -155,6 +153,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration4$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -file-storage-path=$TEMP_FILE \
             -source-path=. \
             -server-port=$SERVER_PORT \
@@ -180,6 +179,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration5$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -source-path=. \
             -server-port=$SERVER_PORT \
             -agent-binary-path=cmd/agent/agent \
@@ -203,6 +203,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration6$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -source-path=. \
             -server-port=$SERVER_PORT \
             -agent-binary-path=cmd/agent/agent \
@@ -225,6 +226,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration7$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -source-path=. \
             -server-port=$SERVER_PORT
             -agent-binary-path=cmd/agent/agent \
@@ -246,6 +248,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration8$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -source-path=. \
             -server-port=$SERVER_PORT \
             -agent-binary-path=cmd/agent/agent \
@@ -266,6 +269,7 @@ jobs:
           ADDRESS="localhost:${SERVER_PORT}"
           TEMP_FILE=$(random tempfile)
           metricstest -test.v -test.run=^TestIteration9$ \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -source-path=. \
             -server-port=$SERVER_PORT \
             -key="${TEMP_FILE}" \
