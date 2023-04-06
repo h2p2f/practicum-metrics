@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-var flagRunPort string
+var flagRunAddr string
 
 func MetricRouter() chi.Router {
 	//create storage
@@ -28,12 +28,23 @@ func MetricRouter() chi.Router {
 }
 func main() {
 	//-----------------parse flags and env variables-----------------
-	flag.StringVar(&flagRunPort, "a", ":8080", "port to run server on")
-	flag.Parse()
+	// this code for normal server users
+	//flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
+	//flag.Parse()
+
+	// this code for crazy people who want to use random flags
+
+	sliceFlags := flag.NewFlagSet("slice", flag.ContinueOnError)
+	sliceFlags.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
+	sliceFlags.Parse(os.Args[1:])
+	//code below is feature for handle errors in sliceFlags.Parse
+	//if err != nil {
+	//	panic(err)
+	//}
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		flagRunPort = envAddress
+		flagRunAddr = envAddress
 	}
 	//-----------------start server-----------------
-	fmt.Println("Running server on", flagRunPort)
-	log.Fatal(http.ListenAndServe(flagRunPort, MetricRouter()))
+	fmt.Println("Running server on", flagRunAddr)
+	log.Fatal(http.ListenAndServe(flagRunAddr, MetricRouter()))
 }
