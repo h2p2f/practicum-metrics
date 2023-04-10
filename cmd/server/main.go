@@ -29,14 +29,13 @@ func MetricRouter() chi.Router {
 func main() {
 	//-----------------parse flags and env variables-----------------
 	// this code for normal server users
-	//flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
-	//flag.Parse()
+	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
+	flag.Parse()
 
 	// this code for crazy people who want to use random flags
-
-	sliceFlags := flag.NewFlagSet("slice", flag.ContinueOnError)
-	sliceFlags.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
-	sliceFlags.Parse(os.Args[1:])
+	//sliceFlags := flag.NewFlagSet("slice", flag.ContinueOnError)
+	//sliceFlags.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
+	//sliceFlags.Parse(os.Args[1:])
 	//code below is feature for handle errors in sliceFlags.Parse
 	//if err != nil {
 	//	panic(err)
