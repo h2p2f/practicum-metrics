@@ -13,7 +13,7 @@ type RuntimeMetrics struct {
 	counter map[string]int64
 }
 
-//UrlMetrics is a function that returns a map of metrics and their values
+// NewMetrics is a function that returns a map of metrics and their values
 func (m *RuntimeMetrics) NewMetrics() {
 	m.gauge = make(map[string]float64)
 	m.counter = make(map[string]int64)
@@ -95,7 +95,7 @@ func (m *RuntimeMetrics) Monitor() {
 	m.counter["Counter"]++
 }
 
-//UrlMetrics is a function that returns a slice of urls that are generated from the metrics and their values
+// URLMetrics  is a function that returns a slice of urls that are generated from the metrics and their values
 func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	//lock the mutex
 	m.mut.Lock()

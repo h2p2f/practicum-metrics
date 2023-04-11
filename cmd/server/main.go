@@ -11,6 +11,7 @@ import (
 	"os"
 )
 
+//flagRunAddr is a param for run address
 var flagRunAddr string
 
 func MetricRouter() chi.Router {
