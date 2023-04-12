@@ -1,15 +1,5 @@
 package storage
 
-// Storage is an interface for storage
-type Storage interface {
-	SetGauge(name string, value float64)
-	SetCounter(name string, value int64)
-	GetGauge(name string) ([]float64, bool)
-	GetCounter(name string) (int64, bool)
-	GetAllGauges() map[string][]float64
-	GetAllCounters() map[string]int64
-}
-
 // MemStorage is a storage in memory
 // it is a struct with two maps - gauges and counters
 // gauges is a map of gauge name and slice of gauge values

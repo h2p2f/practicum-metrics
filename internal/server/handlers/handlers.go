@@ -3,19 +3,27 @@ package handlers
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
+type Storager interface {
+	SetGauge(name string, value float64)
+	SetCounter(name string, value int64)
+	GetGauge(name string) ([]float64, bool)
+	GetCounter(name string) (int64, bool)
+	GetAllGauges() map[string][]float64
+	GetAllCounters() map[string]int64
+}
+
 // MetricHandler is a handler for metrics
 type MetricHandler struct {
-	Storage storage.Storage
+	Storage Storager
 }
 
 // NewMetricHandler creates a new MetricHandler
-func NewMetricHandler(s storage.Storage) *MetricHandler {
+func NewMetricHandler(s Storager) *MetricHandler {
 	return &MetricHandler{Storage: s}
 }
 
@@ -40,8 +48,7 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			currentValue, ok := m.Storage.GetCounter(key)
-			fmt.Println(currentValue, ok, n)
+			currentValue, _ := m.Storage.GetCounter(key)
 			m.Storage.SetCounter(key, n+currentValue)
 		}
 	case "gauge":
