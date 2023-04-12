@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+//this variables for start up flags
 var flagRunPort string
 var reportInterval time.Duration
 var poolInterval time.Duration
@@ -24,7 +25,8 @@ func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 
 func main() {
 	//------------------flags and env variables------------------
-	//variables for flags
+	//temporary local variables for flags
+	//this code has no grace, but it works
 	var r, p int
 	//parse flags
 	flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
@@ -36,7 +38,7 @@ func main() {
 	reportInterval = time.Duration(r)
 	//set poolInterval
 	poolInterval = time.Duration(p)
-	//get env variables
+	//get env variables, if they exist drop flags
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 		envReportInterval, err := strconv.Atoi(envReportInterval)
 		if err != nil {
@@ -57,13 +59,14 @@ func main() {
 	//------------------start agent------------------
 	//set host
 	host := "http://" + flagRunPort
+	//print info
 	fmt.Println("Running agent for server:", host)
 	fmt.Println("Report to server interval:", reportInterval)
 	fmt.Println("Pool interval:", poolInterval)
 	//create new metrics
 	m := new(metrics.RuntimeMetrics)
 	m.NewMetrics()
-	//start monitoring (made with goroutine, because use time.Sleep with poolInterval)
+	//start monitoring (made with goroutine, because interval is not constant)
 	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
 	for {
@@ -81,7 +84,9 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			//I don't fully understand this code, but it works
+			//I don't fully understand this code below
+			//(linter complains about an unused variable)
+			//but it works
 			//TODO: try test with blank variable, without the code below
 			fmt.Print(resp)
 		}

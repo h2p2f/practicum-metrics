@@ -14,6 +14,7 @@ import (
 //flagRunAddr is a param for run address
 var flagRunAddr string
 
+//function to create router
 func MetricRouter() chi.Router {
 	//create storage
 	m := storage.NewMemStorage()
@@ -33,7 +34,7 @@ func main() {
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
 	flag.Parse()
 
-	// this code for crazy people who want to use random flags
+	// this code below for crazy people who want to use random flags
 	//sliceFlags := flag.NewFlagSet("slice", flag.ContinueOnError)
 	//sliceFlags.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
 	//sliceFlags.Parse(os.Args[1:])
@@ -41,6 +42,8 @@ func main() {
 	//if err != nil {
 	//	panic(err)
 	//}
+
+	//this code for a healthy user
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
 	}

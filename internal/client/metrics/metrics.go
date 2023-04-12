@@ -62,7 +62,7 @@ func (m *RuntimeMetrics) Monitor() {
 	var RtMetrics runtime.MemStats
 	//get runtime metrics
 	runtime.ReadMemStats(&RtMetrics)
-	//lock the mutex
+	//lock the mutex, update the metrics and unlock the mutex
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	m.gauge["Alloc"] = float64(RtMetrics.Alloc)

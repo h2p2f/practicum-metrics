@@ -2,8 +2,7 @@ package storage
 
 // MemStorage is a storage in memory
 // it is a struct with two maps - gauges and counters
-// gauges is a map of gauge name and slice of gauge values
-// counters is a map of counter name and counter value
+
 type MemStorage struct {
 	Gauges   map[string][]float64
 	Counters map[string]int64

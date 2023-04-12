@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Storager is an interface for storage
 type Storager interface {
 	SetGauge(name string, value float64)
 	SetCounter(name string, value int64)
@@ -28,7 +29,9 @@ func NewMetricHandler(s Storager) *MetricHandler {
 }
 
 // UpdatePage is a handler for metrics (POST requests)
-// now it works only with requests like this: POST http://localhost:8080/update/gauge/gaugeMetric/78
+// now it works only with requests like this:
+//POST http://localhost:8080/update/gauge/gaugeMetric/78
+//port is variable, set it in main.go
 func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	//check method
 	if r.Method != http.MethodPost {
@@ -69,7 +72,9 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetMetricValue is a handler for metrics (GET requests)
-// now it works only with requests like this: GET http://localhost:8080/value/gauge/gaugeMetric
+// now it works only with requests like this:
+//GET http://localhost:8080/value/gauge/gaugeMetric
+//port is variable, set it in main.go
 func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 	//check method
 	if r.Method != http.MethodGet {
