@@ -30,8 +30,8 @@ func NewMetricHandler(s Storager) *MetricHandler {
 
 // UpdatePage is a handler for metrics (POST requests)
 // now it works only with requests like this:
-//POST http://localhost:8080/update/gauge/gaugeMetric/78
-//port is variable, set it in main.go
+// POST http://localhost:8080/update/gauge/gaugeMetric/78
+// port is variable, set it in main.go
 func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	//check method
 	if r.Method != http.MethodPost {
@@ -53,6 +53,7 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 			}
 			currentValue, _ := m.Storage.GetCounter(key)
 			m.Storage.SetCounter(key, n+currentValue)
+			w.WriteHeader(http.StatusOK)
 		}
 	case "gauge":
 		{
@@ -62,6 +63,7 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			m.Storage.SetGauge(key, n)
+			w.WriteHeader(http.StatusOK)
 		}
 		//if metric is not counter or gauge, return bad request
 	default:
@@ -73,8 +75,8 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 
 // GetMetricValue is a handler for metrics (GET requests)
 // now it works only with requests like this:
-//GET http://localhost:8080/value/gauge/gaugeMetric
-//port is variable, set it in main.go
+// GET http://localhost:8080/value/gauge/gaugeMetric
+// port is variable, set it in main.go
 func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 	//check method
 	if r.Method != http.MethodGet {

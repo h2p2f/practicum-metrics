@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/h2p2f/practicum-metrics/internal/client/metrics"
+	"log"
 	"os"
 	"strconv"
 	"time"
 )
 
-//this variables for start up flags
+// these variables for start up flags
 var flagRunPort string
 var reportInterval time.Duration
 var poolInterval time.Duration
 
-//function to monitor metrics
+// function to monitor metrics
 func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 	for {
 		m.Monitor()
@@ -42,7 +43,7 @@ func main() {
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 		envReportInterval, err := strconv.Atoi(envReportInterval)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		reportInterval = time.Duration(envReportInterval)
 	}
