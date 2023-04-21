@@ -75,7 +75,7 @@ func main() {
 				resp, err := client.R().
 					SetHeader("Content-Type", "application/json").
 					SetBody(data).
-					Post(host + "/update")
+					Post(host + "/update/")
 				if err != nil {
 					panic(err)
 
