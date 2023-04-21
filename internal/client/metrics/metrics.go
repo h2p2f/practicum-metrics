@@ -54,9 +54,10 @@ func (m *RuntimeMetrics) NewMetrics() {
 		"StackInuse",
 		"StackSys",
 		"Sys",
-		"TotalAlloc"}
+		"TotalAlloc",
+		"RandomValue"}
 
-	counterMetrics := []string{"Counter"}
+	counterMetrics := []string{"PollCount"}
 	//initialize metrics
 	for _, metric := range gaugeMetrics {
 		m.gauge[metric] = 0
@@ -102,7 +103,7 @@ func (m *RuntimeMetrics) Monitor() {
 	m.gauge["StackSys"] = float64(RtMetrics.StackSys)
 	m.gauge["Sys"] = float64(RtMetrics.Sys)
 	m.gauge["TotalAlloc"] = float64(RtMetrics.TotalAlloc)
-	m.counter["Counter"]++
+	m.counter["PollCount"]++
 }
 
 // URLMetrics  is a function that returns a slice of urls that are generated from the metrics and their values
