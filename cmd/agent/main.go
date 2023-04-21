@@ -71,25 +71,20 @@ func main() {
 	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
 	for {
-		//sleep for reportInterval
 		time.Sleep(reportInterval * time.Second)
-		//get slice urls
-		urls := m.URLMetrics(host)
-		for _, url := range urls {
-			//send metrics to server with resty
-			//create new http client
+		jsonMetrics := m.JsonMetrics()
+		for _, data := range jsonMetrics {
 			client := resty.New()
 			resp, err := client.R().
-				SetHeader("Content-Type", "text/plain").
-				Post(url)
+				SetHeader("Content-Type", "application/json").
+				SetBody(data).
+				Post(host + "/update")
 			if err != nil {
 				panic(err)
+
 			}
-			//I don't fully understand this code below
-			//(linter complains about an unused variable)
-			//but it works
-			//TODO: try test with blank variable, without the code below
 			fmt.Print(resp)
+
 		}
 	}
 }

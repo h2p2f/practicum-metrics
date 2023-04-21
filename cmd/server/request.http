@@ -1,3 +1,9 @@
+POST http://localhost:80/api/item
+Content-Type: application/x-www-form-urlencoded
+
+id=99&content=new-element
+
+###
 POST http://localhost:8080/update/counter/someMetric/53
 ###
 POST http://localhost:8080/update/counter/anotherMetric/341
@@ -19,3 +25,4 @@ POST http://localhost:8080/update/gauge/gaugeAnother/none
 GET http://localhost:8080/value/counter/someMetric
 ###
 GET http://localhost:8080
+

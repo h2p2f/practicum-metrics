@@ -1,12 +1,22 @@
 package metrics
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"runtime"
 	"sync"
 )
 
-//RuntimeMetrics is a struct that contains all the metrics that are being monitored
+// JsonMetrics is a struct that contains all the metrics that are being monitored
+type JsonMetrics struct {
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
+
+// RuntimeMetrics is a struct that contains all the metrics that are being monitored
 type RuntimeMetrics struct {
 	mut     sync.RWMutex
 	gauge   map[string]float64
@@ -56,7 +66,7 @@ func (m *RuntimeMetrics) NewMetrics() {
 	}
 }
 
-//Monitor is a function that monitors the metrics
+// Monitor is a function that monitors the metrics
 func (m *RuntimeMetrics) Monitor() {
 	//set up runtime metrics
 	var RtMetrics runtime.MemStats
@@ -113,4 +123,31 @@ func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	}
 	m.counter["Counter"] = 0
 	return urls
+}
+
+func (m *RuntimeMetrics) JsonMetrics() [][]byte {
+	//lock the mutex
+	m.mut.Lock()
+	defer m.mut.Unlock()
+	//create a slice of urls
+	var jsonMetrics [][]byte
+	//generate urls
+	for metric, value := range m.gauge {
+		jsonMetric := JsonMetrics{ID: metric, MType: "gauge", Value: &value}
+		out, err := json.Marshal(jsonMetric)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jsonMetrics = append(jsonMetrics, out)
+	}
+	for metric, value := range m.counter {
+		jsonMetric := JsonMetrics{ID: metric, MType: "counter", Delta: &value}
+		out, err := json.Marshal(jsonMetric)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jsonMetrics = append(jsonMetrics, out)
+	}
+	m.counter["Counter"] = 0
+	return jsonMetrics
 }

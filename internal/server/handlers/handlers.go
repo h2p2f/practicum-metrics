@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -21,6 +23,12 @@ type Storager interface {
 // MetricHandler is a handler for metrics
 type MetricHandler struct {
 	Storage Storager
+}
+type Metrics struct {
+	ID    string  `json:"id"`              // имя метрики
+	MType string  `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
 // NewMetricHandler creates a new MetricHandler
@@ -159,4 +167,100 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 		//if mentors will say to return all values, uncomment this
 		//w.Write([]byte(fmt.Sprintf("<p> %s: %v</p>", k, v)))
 	}
+}
+
+func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	var buf bytes.Buffer
+	var MetricFromRequest Metrics
+
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	if err = json.Unmarshal(buf.Bytes(), &MetricFromRequest); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	switch strings.ToLower(MetricFromRequest.MType) {
+	case "counter":
+		{
+			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
+			m.Storage.SetCounter(MetricFromRequest.ID, MetricFromRequest.Delta+currentValue)
+			w.WriteHeader(http.StatusOK)
+		}
+	case "gauge":
+		{
+			m.Storage.SetGauge(MetricFromRequest.ID, MetricFromRequest.Value)
+			w.WriteHeader(http.StatusOK)
+		}
+	default:
+		{
+			http.Error(w, "Not implemented", http.StatusNotImplemented)
+		}
+	}
+}
+
+func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	var buf bytes.Buffer
+	var MetricFromRequest Metrics
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	if err = json.Unmarshal(buf.Bytes(), &MetricFromRequest); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	switch strings.ToLower(MetricFromRequest.MType) {
+	case "counter":
+		{
+			n, ok := m.Storage.GetCounter(MetricFromRequest.ID)
+			if !ok {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+			MetricFromRequest.Delta = n
+			MetricFromRequest.Value = 0
+		}
+	case "gauge":
+		{
+			value, ok := m.Storage.GetGauge(MetricFromRequest.ID)
+			if !ok {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+			MetricFromRequest.Value = value[len(value)-1]
+			MetricFromRequest.Delta = 0
+		}
+	}
+	response, err := json.Marshal(MetricFromRequest)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(response)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }

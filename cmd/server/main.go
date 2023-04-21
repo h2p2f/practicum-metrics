@@ -27,6 +27,8 @@ func MetricRouter() chi.Router {
 	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
 	loggedRouter.Get("/", handler.MainPage)
+	loggedRouter.Post("/update", handler.UpdateJSON)
+	loggedRouter.Post("/value", handler.ValueJSON)
 	return r
 }
 func main() {
