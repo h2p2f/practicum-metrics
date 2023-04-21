@@ -17,6 +17,30 @@ var reportInterval time.Duration
 var poolInterval time.Duration
 
 // function to monitor metrics
+func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
+	for {
+		m.Monitor()
+		time.Sleep(pool * time.Second)
+	}
+}
+func sendMetrics(m *metrics.RuntimeMetrics, host string, report time.Duration) {
+	for {
+		jsonMetrics := m.JsonMetrics()
+		for _, data := range jsonMetrics {
+			client := resty.New()
+			resp, err := client.R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(data).
+				Post(host + "/update/")
+			if err != nil {
+				panic(err)
+
+			}
+			fmt.Print(resp)
+		}
+		time.Sleep(report * time.Second)
+	}
+}
 
 func main() {
 	//------------------flags and env variables------------------
@@ -62,29 +86,10 @@ func main() {
 	m := new(metrics.RuntimeMetrics)
 	m.NewMetrics()
 	//start monitoring (made with goroutine, because interval is not constant)
-	//go getMetrics(m, poolInterval)
+	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
-	timeCounter := 0
+	go sendMetrics(m, host, reportInterval)
 	for {
-		if timeCounter%int(poolInterval) == 0 {
-			m.Monitor()
-		}
-		if timeCounter%int(reportInterval) == 0 {
-			jsonMetrics := m.JsonMetrics()
-			for _, data := range jsonMetrics {
-				client := resty.New()
-				resp, err := client.R().
-					SetHeader("Content-Type", "application/json").
-					SetBody(data).
-					Post(host + "/update/")
-				if err != nil {
-					panic(err)
-
-				}
-				fmt.Print(resp)
-			}
-		}
-		time.Sleep(1 * time.Second)
-		timeCounter++
 	}
+
 }
