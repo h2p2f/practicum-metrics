@@ -66,8 +66,6 @@ func main() {
 	//start reporting in main goroutine
 	timeCounter := 0
 	for {
-		time.Sleep(1 * time.Second)
-		timeCounter++
 		if timeCounter%int(reportInterval) == 0 {
 			jsonMetrics := m.JsonMetrics()
 			for _, data := range jsonMetrics {
@@ -86,5 +84,7 @@ func main() {
 		if timeCounter%int(poolInterval) == 0 {
 			m.Monitor()
 		}
+		time.Sleep(1 * time.Second)
+		timeCounter++
 	}
 }
