@@ -76,6 +76,7 @@ func main() {
 	//start reporting in main goroutine
 	//go sendMetrics(m, host, reportInterval)
 	for {
+		time.Sleep(reportInterval * time.Second)
 		jsonMetrics := m.JsonMetrics()
 		for _, data := range jsonMetrics {
 			client := resty.New()
@@ -90,6 +91,6 @@ func main() {
 			fmt.Print(resp)
 
 		}
-		time.Sleep(reportInterval * time.Second)
+
 	}
 }
