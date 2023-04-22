@@ -99,7 +99,7 @@ func main() {
 					}
 				}
 			}
-			fmt.Print(resp)
+			fmt.Println("received response from server: ", resp)
 
 		}
 

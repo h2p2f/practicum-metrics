@@ -195,18 +195,26 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 		{
 			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
 			m.Storage.SetCounter(MetricFromRequest.ID, MetricFromRequest.Delta+currentValue)
-			w.WriteHeader(http.StatusOK)
+			//w.WriteHeader(http.StatusOK)
 		}
 	case "gauge":
 		{
 			m.Storage.SetGauge(MetricFromRequest.ID, MetricFromRequest.Value)
-			w.WriteHeader(http.StatusOK)
+			//w.WriteHeader(http.StatusOK)
 		}
 	default:
 		{
 			http.Error(w, "Not implemented", http.StatusNotImplemented)
 		}
 	}
+	response, _ := json.Marshal(MetricFromRequest)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(response)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
 
 func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
