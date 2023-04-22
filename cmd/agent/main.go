@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,26 +24,6 @@ func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 		time.Sleep(pool * time.Second)
 	}
 }
-
-//func sendMetrics(m *metrics.RuntimeMetrics, host string, report time.Duration) {
-//	for {
-//		jsonMetrics := m.JsonMetrics()
-//		for _, data := range jsonMetrics {
-//			client := resty.New()
-//			resp, err := client.R().
-//				SetHeader("Content-Type", "application/json").
-//				SetBody(data).
-//				Post(host + "/update/")
-//			if err != nil {
-//				panic(err)
-//
-//			}
-//			fmt.Print(resp)
-//		}
-//		time.Sleep(report * time.Second)
-//	}
-//}
-
 func main() {
 	//------------------flags and env variables------------------
 	//temporary local variables for flags
@@ -78,7 +59,11 @@ func main() {
 	}
 	//------------------start agent------------------
 	//set host
-	host := "http://" + flagRunPort
+
+	host := "http://"
+	if !strings.Contains(flagRunPort, host) {
+		host += flagRunPort
+	}
 	//print info
 	fmt.Println("Running agent for server:", host)
 	fmt.Println("Report to server interval:", reportInterval)
