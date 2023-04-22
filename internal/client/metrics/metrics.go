@@ -131,7 +131,7 @@ func (m *RuntimeMetrics) JSONMetrics() [][]byte {
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	//create a slice of urls
-	var jsonMetrics [][]byte
+	var result [][]byte
 	//generate urls
 	for metric, value := range m.gauge {
 		jsonMetric := JSONMetrics{ID: metric, MType: "gauge", Value: &value}
@@ -139,7 +139,7 @@ func (m *RuntimeMetrics) JSONMetrics() [][]byte {
 		if err != nil {
 			log.Fatal(err)
 		}
-		jsonMetrics = append(jsonMetrics, out)
+		result = append(result, out)
 	}
 	for metric, value := range m.counter {
 		jsonMetric := JSONMetrics{ID: metric, MType: "counter", Delta: &value}
@@ -147,8 +147,8 @@ func (m *RuntimeMetrics) JSONMetrics() [][]byte {
 		if err != nil {
 			log.Fatal(err)
 		}
-		jsonMetrics = append(jsonMetrics, out)
+		result = append(result, out)
 	}
 	m.counter["Counter"] = 0
-	return jsonMetrics
+	return result
 }

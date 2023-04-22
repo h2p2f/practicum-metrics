@@ -25,10 +25,10 @@ type MetricHandler struct {
 	Storage Storager
 }
 type Metrics struct {
-	ID    string  `json:"id"`              // имя метрики
-	MType string  `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
 // NewMetricHandler creates a new MetricHandler
@@ -194,12 +194,13 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	case "counter":
 		{
 			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
-			m.Storage.SetCounter(MetricFromRequest.ID, MetricFromRequest.Delta+currentValue)
+			m.Storage.SetCounter(MetricFromRequest.ID, *MetricFromRequest.Delta+currentValue)
 			//w.WriteHeader(http.StatusOK)
 		}
 	case "gauge":
 		{
-			m.Storage.SetGauge(MetricFromRequest.ID, MetricFromRequest.Value)
+			//if MetricFromRequest.Value == '' { MetricFromRequest.Value = 0 }
+			m.Storage.SetGauge(MetricFromRequest.ID, *MetricFromRequest.Value)
 			//w.WriteHeader(http.StatusOK)
 		}
 	default:
@@ -245,7 +246,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			MetricFromRequest.Delta = n
+			*MetricFromRequest.Delta = n
 			//MetricFromRequest.Value = 0
 		}
 	case "gauge":
@@ -255,7 +256,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			MetricFromRequest.Value = value[len(value)-1]
+			*MetricFromRequest.Value = value[len(value)-1]
 			//MetricFromRequest.Delta = 0
 		}
 	}
@@ -270,5 +271,4 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
