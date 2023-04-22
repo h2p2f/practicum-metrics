@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -77,7 +79,7 @@ func main() {
 	//go sendMetrics(m, host, reportInterval)
 	for {
 		time.Sleep(reportInterval * time.Second)
-		jsonMetrics := m.JsonMetrics()
+		jsonMetrics := m.JSONMetrics()
 		for _, data := range jsonMetrics {
 			client := resty.New()
 			resp, err := client.R().
@@ -85,8 +87,17 @@ func main() {
 				SetBody(data).
 				Post(host + "/update/")
 			if err != nil {
-				panic(err)
-
+				//panic(err)
+				if errors.Is(err, syscall.EPIPE) {
+					time.Sleep(100 * time.Millisecond)
+					resp, err = client.R().
+						SetHeader("Content-Type", "application/json").
+						SetBody(data).
+						Post(host + "/update/")
+					if err != nil {
+						log.Fatalf("Error: %v", err)
+					}
+				}
 			}
 			fmt.Print(resp)
 

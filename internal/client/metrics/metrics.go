@@ -9,7 +9,7 @@ import (
 )
 
 // JsonMetrics is a struct that contains all the metrics that are being monitored
-type JsonMetrics struct {
+type JSONMetrics struct {
 	ID    string   `json:"id"`
 	MType string   `json:"type"`
 	Delta *int64   `json:"delta,omitempty"`
@@ -126,7 +126,7 @@ func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	return urls
 }
 
-func (m *RuntimeMetrics) JsonMetrics() [][]byte {
+func (m *RuntimeMetrics) JSONMetrics() [][]byte {
 	//lock the mutex
 	m.mut.Lock()
 	defer m.mut.Unlock()
@@ -134,7 +134,7 @@ func (m *RuntimeMetrics) JsonMetrics() [][]byte {
 	var jsonMetrics [][]byte
 	//generate urls
 	for metric, value := range m.gauge {
-		jsonMetric := JsonMetrics{ID: metric, MType: "gauge", Value: &value}
+		jsonMetric := JSONMetrics{ID: metric, MType: "gauge", Value: &value}
 		out, err := json.Marshal(jsonMetric)
 		if err != nil {
 			log.Fatal(err)
@@ -142,7 +142,7 @@ func (m *RuntimeMetrics) JsonMetrics() [][]byte {
 		jsonMetrics = append(jsonMetrics, out)
 	}
 	for metric, value := range m.counter {
-		jsonMetric := JsonMetrics{ID: metric, MType: "counter", Delta: &value}
+		jsonMetric := JSONMetrics{ID: metric, MType: "counter", Delta: &value}
 		out, err := json.Marshal(jsonMetric)
 		if err != nil {
 			log.Fatal(err)
