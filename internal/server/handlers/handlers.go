@@ -246,7 +246,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			*MetricFromRequest.Delta = n
+			MetricFromRequest.Delta = &n
 			//MetricFromRequest.Value = 0
 		}
 	case "gauge":
@@ -256,7 +256,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			*MetricFromRequest.Value = value[len(value)-1]
+			MetricFromRequest.Value = &value[len(value)-1]
 			//MetricFromRequest.Delta = 0
 		}
 	}
