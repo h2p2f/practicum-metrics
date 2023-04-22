@@ -238,7 +238,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			MetricFromRequest.Delta = n
-			MetricFromRequest.Value = 0
+			//MetricFromRequest.Value = 0
 		}
 	case "gauge":
 		{
@@ -248,7 +248,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			MetricFromRequest.Value = value[len(value)-1]
-			MetricFromRequest.Delta = 0
+			//MetricFromRequest.Delta = 0
 		}
 	}
 	response, err := json.Marshal(MetricFromRequest)
