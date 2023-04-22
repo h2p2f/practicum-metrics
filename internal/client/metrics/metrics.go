@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"runtime"
 	"sync"
 )
@@ -104,6 +105,7 @@ func (m *RuntimeMetrics) Monitor() {
 	m.gauge["Sys"] = float64(RtMetrics.Sys)
 	m.gauge["TotalAlloc"] = float64(RtMetrics.TotalAlloc)
 	m.counter["PollCount"]++
+	m.gauge["RandomValue"] = rand.Float64() * 10000
 }
 
 // URLMetrics  is a function that returns a slice of urls that are generated from the metrics and their values
