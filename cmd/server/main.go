@@ -23,12 +23,12 @@ func MetricRouter() chi.Router {
 	//create router
 	r := chi.NewRouter()
 	//set routes
-	loggedRouter := r.With(logger.WithLogging)
-	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
-	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
-	loggedRouter.Get("/", handler.MainPage)
-	loggedRouter.Post("/update/", handler.UpdateJSON)
-	loggedRouter.Post("/value/", handler.ValueJSON)
+	loggedAndZippedRouter := r.With(logger.WithLogging, handlers.GzipHanle)
+	loggedAndZippedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
+	loggedAndZippedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
+	r.Get("/", handler.MainPage)
+	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
+	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	return r
 }
 func main() {

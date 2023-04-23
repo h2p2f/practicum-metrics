@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"flag"
 	"fmt"
@@ -76,15 +78,20 @@ func main() {
 	//start monitoring (made with goroutine, because interval is not constant)
 	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
-	//go sendMetrics(m, host, reportInterval)
+
 	for {
 		time.Sleep(reportInterval * time.Second)
 		jsonMetrics := m.JSONMetrics()
 		for _, data := range jsonMetrics {
+			buf, err := Compress(data)
+			if err != nil {
+				log.Fatalf("Error: %v", err)
+			}
 			client := resty.New()
 			resp, err := client.R().
 				SetHeader("Content-Type", "application/json").
-				SetBody(data).
+				SetHeader("Content-Encoding", "gzip").
+				SetBody(buf).
 				Post(host + "/update/")
 			if err != nil {
 				//panic(err)
@@ -92,16 +99,30 @@ func main() {
 					time.Sleep(100 * time.Millisecond)
 					resp, err = client.R().
 						SetHeader("Content-Type", "application/json").
-						SetBody(data).
+						SetHeader("Content-Encoding", "gzip").
+						SetBody(buf).
 						Post(host + "/update/")
 					if err != nil {
 						log.Fatalf("Error: %v", err)
 					}
 				}
 			}
-			fmt.Println("received response from server: ", resp)
+
+			fmt.Println("received response from server: ", resp.StatusCode())
 
 		}
 
 	}
+}
+
+func Compress(data []byte) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	gz := gzip.NewWriter(buf)
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
