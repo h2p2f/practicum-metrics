@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
@@ -9,10 +10,20 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"unicode"
 )
 
 // flagRunAddr is a param for run address
 var flagRunAddr string
+
+func isNumeric(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
 
 // MetricRouter function to create router
 func MetricRouter() chi.Router {
@@ -40,6 +51,13 @@ func main() {
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
 	}
+	//hardcode for autotests
+	host := "localhost:"
+	if isNumeric(flagRunAddr) {
+		flagRunAddr = host + flagRunAddr
+		fmt.Println("Running server on", flagRunAddr)
+	}
+
 	if err := logger.InitLogger("info"); err != nil {
 		log.Fatal(err)
 	}
