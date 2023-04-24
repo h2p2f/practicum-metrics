@@ -107,9 +107,7 @@ func main() {
 					}
 				}
 			}
-
 			fmt.Println("received response from server: ", resp.StatusCode())
-
 		}
 
 	}

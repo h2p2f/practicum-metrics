@@ -26,7 +26,7 @@ func MetricRouter() chi.Router {
 	loggedAndZippedRouter := r.With(logger.WithLogging, handlers.GzipHanle)
 	loggedAndZippedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedAndZippedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
-	r.Get("/", handler.MainPage)
+	loggedAndZippedRouter.Get("/", handler.MainPage)
 	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
 	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	return r

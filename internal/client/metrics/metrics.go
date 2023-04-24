@@ -124,7 +124,7 @@ func (m *RuntimeMetrics) URLMetrics(host string) []string {
 		generatedURL := fmt.Sprintf("%s/update/counter/%s/%d", host, metric, value)
 		urls = append(urls, generatedURL)
 	}
-	m.counter["Counter"] = 0
+	m.counter["PollCount"] = 0
 	return urls
 }
 
@@ -151,6 +151,6 @@ func (m *RuntimeMetrics) JSONMetrics() [][]byte {
 		}
 		result = append(result, out)
 	}
-	m.counter["Counter"] = 0
+	m.counter["PollCount"] = 0
 	return result
 }
