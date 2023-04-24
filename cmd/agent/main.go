@@ -14,12 +14,22 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode"
 )
 
 // these variables for start up flags
 var flagRunPort string
 var reportInterval time.Duration
 var poolInterval time.Duration
+
+func isNumeric(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
 
 // function to monitor metrics
 func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
@@ -65,7 +75,9 @@ func main() {
 	//set host
 
 	host := "http://"
-	if !strings.Contains(flagRunPort, host) {
+	if isNumeric(flagRunPort) {
+		host = host + "localhost:" + flagRunPort
+	} else if !strings.Contains(flagRunPort, host) {
 		host += flagRunPort
 	}
 	//print info
