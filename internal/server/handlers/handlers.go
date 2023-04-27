@@ -18,6 +18,7 @@ type Storager interface {
 	GetCounter(name string) (int64, bool)
 	GetAllGauges() map[string][]float64
 	GetAllCounters() map[string]int64
+	//GetAllMetricsSliced() []Metrics
 }
 
 // MetricHandler is a handler for metrics

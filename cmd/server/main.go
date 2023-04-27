@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 	"unicode"
 )
-
-// flagRunAddr is a param for run address
-var flagRunAddr string
 
 func isNumeric(s string) bool {
 	for _, c := range s {
@@ -26,9 +26,9 @@ func isNumeric(s string) bool {
 }
 
 // MetricRouter function to create router
-func MetricRouter() chi.Router {
+func MetricRouter(m *storage.MemStorage) chi.Router {
 	//create storage
-	m := storage.NewMemStorage()
+
 	//get handlers
 	handler := handlers.NewMetricHandler(m)
 	//create router
@@ -42,14 +42,43 @@ func MetricRouter() chi.Router {
 	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	return r
 }
-func main() {
-	//-----------------parse flags and env variables-----------------
-	// this code for normal server users
+
+func getFlagsAndEnv() (string, time.Duration, string, bool) {
+	var (
+		flagRunAddr       string
+		flagStoreInterval time.Duration
+		flagStorePath     string
+		flagRestore       bool
+		interval          int
+	)
+
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
+	flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
+	flag.StringVar(&flagStorePath, "f", "/tmp/devops-metrics-db.json", "path to store metrics")
+	flag.BoolVar(&flagRestore, "r", true, "restore metrics from file")
 	flag.Parse()
+
+	flagStoreInterval = time.Duration(interval)
 
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
+	}
+	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
+		envStoreInterval, err := strconv.Atoi(envStoreInterval)
+		if err != nil {
+			log.Fatal(err)
+		}
+		flagStoreInterval = time.Duration(envStoreInterval)
+	}
+	if envStorePath := os.Getenv("STORE_FILE"); envStorePath != "" {
+		flagStorePath = envStorePath
+	}
+	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
+		envRestore, err := strconv.ParseBool(envRestore)
+		if err != nil {
+			log.Fatal(err)
+		}
+		flagRestore = envRestore
 	}
 	//hardcode for autotests
 	host := "localhost:"
@@ -57,13 +86,28 @@ func main() {
 		flagRunAddr = host + flagRunAddr
 		fmt.Println("Running server on", flagRunAddr)
 	}
+	fmt.Println(flagRunAddr, flagStoreInterval, flagStorePath, flagRestore)
+	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore
+}
+func main() {
+	conf := config.NewConfig()
+	conf.SetConfig(getFlagsAndEnv())
+
+	m := storage.NewMemStorage()
+
+	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
+
+	go func() {
+		for {
+			time.Sleep(conf.StoreInterval * time.Second)
+			metrics := m.GetAllMetricsSliced()
+			fileDB.SaveToFile(metrics)
+		}
+	}()
 
 	if err := logger.InitLogger("info"); err != nil {
 		log.Fatal(err)
 	}
-	//logger.Log.Info("Server started", zap.String("address", flagRunAddr))
-	logger.Log.Sugar().Infof("Server started on %s", flagRunAddr)
-	//-----------------start server-----------------
-	//fmt.Println("Running server on", flagRunAddr)
-	log.Fatal(http.ListenAndServe(flagRunAddr, MetricRouter()))
+	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
+	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m)))
 }

@@ -1,30 +1,58 @@
 package config
 
+import "time"
+
 // Config for future usage in handlers
-type Config interface {
-	GetServerAddress() string
-	SetServerAddress(string)
-	NewConfig() *ServerConfig
+type Configurer interface {
+	NewConfig() *serverConfig
+	SetServerAddress(address string)
+	SetStoreInterval(interval int)
+	SetPathToStoreFile(path string)
+	SetRestore(restore bool)
+	GetConfig() *serverConfig
+	SetConfig(string, time.Duration, string, bool) *serverConfig
 }
 
-type ServerConfig struct {
+type serverConfig struct {
 	// address to listen on
-	ServerAddress string
+	ServerAddress   string
+	StoreInterval   time.Duration
+	PathToStoreFile string
+	Restore         bool
 }
 
 // NewConfig is a function that returns a new config
-func NewConfig() *ServerConfig {
-	return &ServerConfig{
-		ServerAddress: "",
+func NewConfig() *serverConfig {
+	return &serverConfig{
+		ServerAddress:   "localhost:8080",
+		StoreInterval:   300,
+		PathToStoreFile: "/tmp/devops-metrics-db.json",
+		Restore:         true,
 	}
 }
-
-// GetServerAddress is a function that returns the server address
-func (c *ServerConfig) GetServerAddress() string {
-	return c.ServerAddress
+func (c *serverConfig) SetServerAddress(address string) {
+	c.ServerAddress = address
+}
+func (c *serverConfig) SetStoreInterval(interval int) {
+	c.StoreInterval = time.Duration(interval)
 }
 
-// SetServerAddress is a function that sets the server address
-func (c *ServerConfig) SetServerAddress(address string) {
+func (c *serverConfig) SetPathToStoreFile(path string) {
+	c.PathToStoreFile = path
+}
+
+func (c *serverConfig) SetRestore(restore bool) {
+	c.Restore = restore
+}
+
+func (c *serverConfig) GetConfig() *serverConfig {
+	return c
+}
+
+func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool) *serverConfig {
 	c.ServerAddress = address
+	c.StoreInterval = interval
+	c.PathToStoreFile = path
+	c.Restore = restore
+	return c
 }

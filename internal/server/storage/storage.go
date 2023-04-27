@@ -48,3 +48,22 @@ func (m *MemStorage) GetAllGauges() map[string][]float64 {
 func (m *MemStorage) GetAllCounters() map[string]int64 {
 	return m.Counters
 }
+
+func (m *MemStorage) GetAllMetricsSliced() []Metrics {
+	var metrics []Metrics
+	for key, value := range m.Gauges {
+		metrics = append(metrics, Metrics{
+			ID:    key,
+			MType: "gauge",
+			Value: &value[len(value)-1],
+		})
+	}
+	for key, value := range m.Counters {
+		metrics = append(metrics, Metrics{
+			ID:    key,
+			MType: "counter",
+			Delta: &value,
+		})
+	}
+	return metrics
+}
