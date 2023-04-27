@@ -67,3 +67,18 @@ func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 	}
 	return metrics
 }
+
+func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
+	for _, metric := range metrics {
+		switch metric.MType {
+		case "gauge":
+			{
+				m.SetGauge(metric.ID, *metric.Value)
+			}
+		case "counter":
+			{
+				m.SetCounter(metric.ID, *metric.Delta)
+			}
+		}
+	}
+}

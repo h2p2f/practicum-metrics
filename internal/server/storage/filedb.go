@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -11,6 +14,7 @@ type FileDB struct {
 	File     *os.File
 	FilePath string
 	Interval time.Duration
+	mut      sync.RWMutex
 }
 
 type Metrics struct {
@@ -43,7 +47,7 @@ func (f *FileDB) SaveToFile(metrics []Metrics) (err error) {
 		if err != nil {
 			return err
 		}
-		_, err = f.File.Write(writeData)
+		_, err = f.File.Write(append(writeData, '\n'))
 		if err != nil {
 			return err
 		}
@@ -58,17 +62,19 @@ func (f *FileDB) ReadFromFile() (metrics []Metrics, err error) {
 			panic(err)
 		}
 	}()
-
-	if err != nil {
-		return nil, err
-	}
-	var metric Metrics
+	scan := bufio.NewScanner(f.File)
 	for {
-		err = json.NewDecoder(f.File).Decode(&metric)
-		if err != nil {
+		if !scan.Scan() {
 			break
 		}
+		metric := Metrics{}
+		data := scan.Bytes()
+		err = json.Unmarshal(data, &metric)
+		if err != nil {
+			return nil, err
+		}
 		metrics = append(metrics, metric)
+		fmt.Println("read from file: ", metric)
 	}
 	return metrics, nil
 }

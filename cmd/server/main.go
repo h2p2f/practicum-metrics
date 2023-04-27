@@ -97,11 +97,22 @@ func main() {
 
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
 
+	if conf.Restore {
+		metrics, err := fileDB.ReadFromFile()
+		if err != nil {
+			fmt.Println(err)
+		}
+		m.RestoreMetrics(metrics)
+	}
+
 	go func() {
 		for {
 			time.Sleep(conf.StoreInterval * time.Second)
 			metrics := m.GetAllMetricsSliced()
-			fileDB.SaveToFile(metrics)
+			err := fileDB.SaveToFile(metrics)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}()
 
