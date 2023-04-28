@@ -25,6 +25,8 @@ type Storager interface {
 type MetricHandler struct {
 	Storage Storager
 }
+
+// Metrics is a struct for metrics with json tags
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
@@ -170,6 +172,7 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateJSON is a handler for metrics (POST requests)
 func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -196,13 +199,10 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 		{
 			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
 			m.Storage.SetCounter(MetricFromRequest.ID, *MetricFromRequest.Delta+currentValue)
-			//w.WriteHeader(http.StatusOK)
 		}
 	case "gauge":
 		{
-			//if MetricFromRequest.Value == '' { MetricFromRequest.Value = 0 }
 			m.Storage.SetGauge(MetricFromRequest.ID, *MetricFromRequest.Value)
-			//w.WriteHeader(http.StatusOK)
 		}
 	default:
 		{
@@ -219,6 +219,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// ValueJSON is a handler for metrics (POST requests to /value)
 func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -248,7 +249,6 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			MetricFromRequest.Delta = &n
-			//MetricFromRequest.Value = 0
 		}
 	case "gauge":
 		{
@@ -258,7 +258,6 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			MetricFromRequest.Value = &value[len(value)-1]
-			//MetricFromRequest.Delta = 0
 		}
 	}
 	response, err := json.Marshal(MetricFromRequest)

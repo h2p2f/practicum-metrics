@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// GzipHanle is middleware for gzip
 func GzipHanle(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		originWriter := w

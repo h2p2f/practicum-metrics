@@ -68,6 +68,7 @@ func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 	return metrics
 }
 
+// RestoreMetrics restores metrics from slice
 func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
 	for _, metric := range metrics {
 		switch metric.MType {

@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// FileDB is a struct that contains file path and interval to store metrics, mutex, file
 type FileDB struct {
 	File     *os.File
 	FilePath string
@@ -17,6 +18,7 @@ type FileDB struct {
 	mut      sync.RWMutex
 }
 
+// Metrics is a struct that contains all the metrics that are being stored in file
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
@@ -24,12 +26,15 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+// NewFileDB is a function that returns a new fileDB
 func NewFileDB(filePath string, interval time.Duration) *FileDB {
 	return &FileDB{
 		FilePath: filePath,
 		Interval: interval,
 	}
 }
+
+// SaveToFile is a function that saves metrics to file
 func (f *FileDB) SaveToFile(metrics []Metrics) (err error) {
 
 	f.File, err = os.OpenFile(f.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
@@ -55,6 +60,7 @@ func (f *FileDB) SaveToFile(metrics []Metrics) (err error) {
 	return nil
 }
 
+// ReadFromFile is a function that reads metrics from file
 func (f *FileDB) ReadFromFile() (metrics []Metrics, err error) {
 	f.File, err = os.OpenFile(f.FilePath, os.O_RDONLY, 0755)
 	defer func() {

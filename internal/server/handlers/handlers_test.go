@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+	"math/rand"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-//test for Handlers
+// test for Handlers
 func TestMetricHandler_UpdatePage(t *testing.T) {
 	type want struct {
-		statusCode   int
-		conttentType string
+		statusCode  int
+		contentType string
 	}
 	tests := []struct {
 		name        string
@@ -27,8 +30,8 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   200,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -37,8 +40,8 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1.0000000000001",
 			want: want{
-				statusCode:   200,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -47,8 +50,8 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   501,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  501,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -57,8 +60,8 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1/1",
 			want: want{
-				statusCode:   404,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  404,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
@@ -81,9 +84,9 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 
 func TestMetricHandler_GetMetricValue(t *testing.T) {
 	type want struct {
-		statusCode   int
-		value        string
-		conttentType string
+		statusCode  int
+		value       string
+		contentType string
 	}
 	tests := []struct {
 		name        string
@@ -98,9 +101,9 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   200,
-				value:        "1",
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				value:       "1",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -109,9 +112,9 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1.0000000000001",
 			want: want{
-				statusCode:   200,
-				value:        "1.0000000000001",
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				value:       "1.0000000000001",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -120,8 +123,8 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   404,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  404,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -130,8 +133,8 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1/1",
 			want: want{
-				statusCode:   404,
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  404,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
@@ -157,9 +160,9 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 
 func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 	type want struct {
-		statusCode   int
-		value        string
-		conttentType string
+		statusCode  int
+		value       string
+		contentType string
 	}
 	tests := []struct {
 		name        string
@@ -174,9 +177,9 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 			metricName:  "test",
 			metricValue: "1",
 			want: want{
-				statusCode:   200,
-				value:        "1",
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				value:       "1",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -185,9 +188,9 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 			metricName:  "test",
 			metricValue: "2",
 			want: want{
-				statusCode:   200,
-				value:        "3",
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				value:       "3",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -196,9 +199,9 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 			metricName:  "test",
 			metricValue: "3",
 			want: want{
-				statusCode:   200,
-				value:        "6",
-				conttentType: "text/plain; charset=utf-8",
+				statusCode:  200,
+				value:       "6",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
@@ -225,9 +228,9 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 
 func TestMetricHandler_MainPage(t *testing.T) {
 	type want struct {
-		statusCode   int
-		conttentType string
-		header       string
+		statusCode  int
+		contentType string
+		header      string
 	}
 	tests := []struct {
 		name string
@@ -236,9 +239,9 @@ func TestMetricHandler_MainPage(t *testing.T) {
 		{
 			name: "Positive test 1",
 			want: want{
-				statusCode:   200,
-				conttentType: "text/html",
-				header:       "<h1>Metrics</h1>",
+				statusCode:  200,
+				contentType: "text/html",
+				header:      "<h1>Metrics</h1>",
 			},
 		},
 	}
@@ -254,12 +257,110 @@ func TestMetricHandler_MainPage(t *testing.T) {
 			if w.Code != tt.want.statusCode {
 				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Code, tt.want.statusCode)
 			}
-			if w.Header().Get("Content-Type") != tt.want.conttentType {
-				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Header().Get("Content-Type"), tt.want.conttentType)
+			if w.Header().Get("Content-Type") != tt.want.contentType {
+				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Header().Get("Content-Type"), tt.want.contentType)
 			}
 			if !strings.Contains(w.Body.String(), tt.want.header) {
 				t.Errorf("MetricHandler.MainPage() = %v, want %v", w.Body.String(), tt.want.header)
 			}
+		})
+	}
+}
+
+func TestMetricHandler_ValueJSON(t *testing.T) {
+	type want struct {
+		statusCode  int
+		contentType string
+	}
+	tests := []struct {
+		name        string
+		metric      string
+		metricName  string
+		metricDelta *int64
+		metricValue *float64
+		want        want
+	}{
+		{
+			name:       "Positive test 1",
+			metric:     "counter",
+			metricName: "test",
+
+			want: want{
+				statusCode:  200,
+				contentType: "application/json",
+			},
+		},
+		{
+			name:       "Positive test 2",
+			metric:     "gauge",
+			metricName: "test-gauge",
+
+			want: want{
+				statusCode:  200,
+				contentType: "application/json",
+			},
+		},
+		{
+			name:       "Positive test 3",
+			metric:     "gauge",
+			metricName: "test-another-gauge",
+
+			want: want{
+				statusCode:  200,
+				contentType: "application/json",
+			},
+		},
+	}
+	testStorage := storage.NewMemStorage()
+	handler := NewMetricHandler(testStorage)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			delta := rand.Int63()
+			value := rand.Float64()
+			metricUpd := Metrics{}
+			metricsVal := Metrics{
+				ID:    tt.metricName,
+				MType: tt.metric,
+			}
+			if tt.metric == "counter" {
+				metricUpd = Metrics{
+					ID:    tt.metricName,
+					MType: tt.metric,
+					Delta: &delta,
+				}
+			} else {
+				metricUpd = Metrics{
+					ID:    tt.metricName,
+					MType: tt.metric,
+					Value: &value,
+				}
+			}
+			dataUpd, err := json.Marshal(metricUpd)
+			if err != nil {
+				t.Errorf("MetricHandler.ValueJSON() = %v", err)
+			}
+			dataVal, err := json.Marshal(metricsVal)
+			if err != nil {
+				t.Errorf("MetricHandler.ValueJSON() = %v", err)
+			}
+			reqPostUpdate := httptest.NewRequest("POST", "/update/", bytes.NewBuffer(dataUpd))
+			reqPostUpdate.Header.Set("Content-Type", "application/json")
+			reqPostValue := httptest.NewRequest("POST", "/value/", bytes.NewBuffer(dataVal))
+			reqPostValue.Header.Set("Content-Type", "application/json")
+			r := chi.NewRouter()
+			r.Post("/update/", handler.UpdateJSON)
+			r.Post("/value/", handler.ValueJSON)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, reqPostUpdate)
+			w = httptest.NewRecorder()
+			r.ServeHTTP(w, reqPostValue)
+			if w.Code != tt.want.statusCode {
+				t.Errorf("MetricHandler.ValueJSON() = %v, want %v", w.Code, tt.want.statusCode)
+			}
+			if w.Header().Get("Content-Type") != tt.want.contentType {
+				t.Errorf("MetricHandler.ValueJSON() = %v, want %v", w.Header().Get("Content-Type"), tt.want.contentType)
+			}
+			//TODO: check and match response body
 		})
 	}
 }

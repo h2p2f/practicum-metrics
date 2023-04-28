@@ -2,23 +2,23 @@ package config
 
 import "time"
 
-// Config for future usage in handlers
+// Configurer interface for config
 type Configurer interface {
 	NewConfig() *serverConfig
-	SetServerAddress(address string)
-	SetStoreInterval(interval int)
-	SetPathToStoreFile(path string)
-	SetRestore(restore bool)
 	GetConfig() *serverConfig
 	SetConfig(string, time.Duration, string, bool) *serverConfig
 }
 
+// serverConfig is a struct that contains server config
 type serverConfig struct {
 	// address to listen on
-	ServerAddress   string
-	StoreInterval   time.Duration
+	ServerAddress string
+	// interval to store metrics
+	StoreInterval time.Duration
+	// path to store file
 	PathToStoreFile string
-	Restore         bool
+	// restore metrics from file
+	Restore bool
 }
 
 // NewConfig is a function that returns a new config
@@ -30,25 +30,15 @@ func NewConfig() *serverConfig {
 		Restore:         true,
 	}
 }
-func (c *serverConfig) SetServerAddress(address string) {
-	c.ServerAddress = address
-}
-func (c *serverConfig) SetStoreInterval(interval int) {
-	c.StoreInterval = time.Duration(interval)
-}
 
-func (c *serverConfig) SetPathToStoreFile(path string) {
-	c.PathToStoreFile = path
-}
+// SetServerAddress is a function that sets server address
 
-func (c *serverConfig) SetRestore(restore bool) {
-	c.Restore = restore
-}
-
+// GetConfig is a function that returns config
 func (c *serverConfig) GetConfig() *serverConfig {
 	return c
 }
 
+// SetConfig is a function that sets config
 func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool) *serverConfig {
 	c.ServerAddress = address
 	c.StoreInterval = interval
