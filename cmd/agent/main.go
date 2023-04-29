@@ -100,6 +100,7 @@ func main() {
 				log.Fatalf("Error: %v", err)
 			}
 			client := resty.New()
+			client.SetRetryCount(3).SetRetryWaitTime(200 * time.Millisecond)
 			resp, err := client.R().
 				SetHeader("Content-Type", "application/json").
 				SetHeader("Content-Encoding", "gzip").
