@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
+	//"errors"
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -12,7 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 	"time"
 	"unicode"
 )
@@ -106,23 +106,24 @@ func main() {
 				SetBody(buf).
 				Post(host + "/update/")
 			if err != nil {
-				//panic(err)
-				if errors.Is(err, syscall.EPIPE) {
-					time.Sleep(100 * time.Millisecond)
-					resp, err = client.R().
-						SetHeader("Content-Type", "application/json").
-						SetHeader("Content-Encoding", "gzip").
-						SetBody(buf).
-						Post(host + "/update/")
-					if err != nil {
-						log.Fatalf("Error: %v", err)
-					}
-				}
+
+				log.Fatalf("Error: %v", err) //panic(err)
+				//if errors.Is(err, syscall.EPIPE) {
+				//	time.Sleep(100 * time.Millisecond)
+				//	resp, err = client.R().
+				//		SetHeader("Content-Type", "application/json").
+				//		SetHeader("Content-Encoding", "gzip").
+				//		SetBody(buf).
+				//		Post(host + "/update/")
+				//	if err != nil {
+				//		log.Fatalf("Error: %v", err)
+
 			}
 			fmt.Println("received response from server: ", resp.StatusCode())
 		}
 
 	}
+
 }
 
 func Compress(data []byte) ([]byte, error) {
