@@ -21,11 +21,12 @@ func MetricRouter(m *storage.MemStorage) chi.Router {
 	//add middlewares
 	loggedAndZippedRouter := r.With(logger.WithLogging, handlers.GzipHanle)
 	//add routes
+	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
+	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	loggedAndZippedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedAndZippedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
 	loggedAndZippedRouter.Get("/", handler.MainPage)
-	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
-	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
+
 	return r
 }
 
