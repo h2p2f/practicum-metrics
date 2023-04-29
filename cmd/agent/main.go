@@ -90,7 +90,6 @@ func main() {
 	//start monitoring (made with goroutine, because interval is not constant)
 	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
-	time.Sleep(7 * time.Second)
 	for {
 		time.Sleep(reportInterval * time.Second)
 		jsonMetrics := m.JSONMetrics()

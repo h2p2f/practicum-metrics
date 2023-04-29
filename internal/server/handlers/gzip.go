@@ -37,7 +37,7 @@ func (cw *CompressWriter) Write(b []byte) (int, error) {
 // WriteHeader is implementation of http.ResponseWriter.WriteHeader
 func (cw *CompressWriter) WriteHeader(statusCode int) {
 	cw.w.WriteHeader(statusCode)
-	if statusCode >= 200 && statusCode < 300 {
+	if statusCode > 199 && statusCode < 300 {
 		cw.w.Header().Set("Content-Encoding", "gzip")
 	}
 }
