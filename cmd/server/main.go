@@ -41,7 +41,8 @@ func main() {
 
 	//create fileDB with path and interval from config
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
-
+	//hardcode to turn off restore from file - attempt to fix bug iter8 autotest
+	conf.Restore = false
 	//restore metrics from file if flag is set
 	if conf.Restore {
 		metrics, err := fileDB.ReadFromFile()
