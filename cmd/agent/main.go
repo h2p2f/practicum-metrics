@@ -92,7 +92,7 @@ func main() {
 	//start reporting in main goroutine
 
 	for {
-		time.Sleep(reportInterval * time.Second)
+
 		jsonMetrics := m.JSONMetrics()
 		for _, data := range jsonMetrics {
 			buf, err := Compress(data)
@@ -121,8 +121,9 @@ func main() {
 
 			}
 			fmt.Println("received response from server: ", resp.StatusCode())
-		}
 
+		}
+		time.Sleep(reportInterval * time.Second)
 	}
 
 }
