@@ -13,7 +13,7 @@ func GzipHanle(next http.Handler) http.Handler {
 		supportGzip := strings.Contains(acceptEncoding, "gzip")
 		sendGzip := strings.Contains(contentEncoding, "gzip")
 
-		if !supportGzip {
+		if !supportGzip && !sendGzip {
 			next.ServeHTTP(w, r)
 			return
 		}
