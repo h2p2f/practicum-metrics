@@ -17,13 +17,13 @@ func GzipHanle(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		//if supportGzip && !sendGzip {
-		//	originWriter := w
-		//	compressedWriter := NewCompressWriter(w)
-		//	originWriter = compressedWriter
-		//	defer compressedWriter.Close()
-		//	next.ServeHTTP(originWriter, r)
-		//}
+		if supportGzip && !sendGzip {
+			originWriter := w
+			compressedWriter := NewCompressWriter(w)
+			originWriter = compressedWriter
+			defer compressedWriter.Close()
+			next.ServeHTTP(originWriter, r)
+		}
 		if sendGzip {
 			originWriter := w
 			compressedWriter := NewCompressWriter(w)
