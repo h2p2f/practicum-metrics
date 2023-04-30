@@ -199,6 +199,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 		{
 			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
 			m.Storage.SetCounter(MetricFromRequest.ID, *MetricFromRequest.Delta+currentValue)
+			*MetricFromRequest.Delta = *MetricFromRequest.Delta + currentValue
 		}
 	case "gauge":
 		{
