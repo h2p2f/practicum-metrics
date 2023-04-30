@@ -20,6 +20,7 @@ func GzipHanle(next http.Handler) http.Handler {
 		if supportGzip && !sendGzip {
 			originWriter := w
 			compressedWriter := NewCompressWriter(w)
+			compressedWriter.WriteHeader(http.StatusOK)
 			originWriter = compressedWriter
 			defer compressedWriter.Close()
 			next.ServeHTTP(originWriter, r)
@@ -28,6 +29,7 @@ func GzipHanle(next http.Handler) http.Handler {
 			originWriter := w
 			compressedWriter := NewCompressWriter(w)
 			originWriter = compressedWriter
+			compressedWriter.WriteHeader(http.StatusOK)
 			defer compressedWriter.Close()
 			compressedReader, err := NewCompressReader(r.Body)
 			if err != nil {
