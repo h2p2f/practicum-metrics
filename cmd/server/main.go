@@ -9,7 +9,6 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -44,10 +43,10 @@ func main() {
 	//create fileDB with path and interval from config
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
 	//hardcode to turn off restore from file -  fix bug iter8 autotest
-	_, err := os.Stat(conf.PathToStoreFile)
-	if err != nil {
-		conf.Restore = false
-	}
+	//_, err := os.Stat(conf.PathToStoreFile)
+	//if err != nil {
+	//	conf.Restore = false
+	//}
 	//restore metrics from file if flag is set
 	if conf.Restore {
 		metrics, err := fileDB.ReadFromFile()
@@ -74,5 +73,8 @@ func main() {
 	}
 	//start server with router
 	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
+	logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
+	logger.Log.Sugar().Infof("path to store file %s", conf.PathToStoreFile)
+	logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
 	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m)))
 }

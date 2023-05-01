@@ -57,11 +57,17 @@ func (f *FileDB) SaveToFile(metrics []Metrics) (err error) {
 			return err
 		}
 	}
+	fmt.Println("saved to file - success")
 	return nil
 }
 
 // ReadFromFile is a function that reads metrics from file
 func (f *FileDB) ReadFromFile() (metrics []Metrics, err error) {
+	_, err = os.Stat(f.FilePath)
+	if os.IsNotExist(err) {
+		return nil, err
+	}
+
 	f.File, err = os.OpenFile(f.FilePath, os.O_RDONLY, 0755)
 	defer func() {
 		if err := f.File.Close(); err != nil {
@@ -81,6 +87,7 @@ func (f *FileDB) ReadFromFile() (metrics []Metrics, err error) {
 		}
 		metrics = append(metrics, metric)
 		fmt.Println("read from file: ", metric)
+
 	}
 	return metrics, nil
 }
