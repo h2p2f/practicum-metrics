@@ -80,13 +80,14 @@ func (f *FileDB) ReadFromFile() (metrics []Metrics, err error) {
 			break
 		}
 		metric := Metrics{}
+		fmt.Println("loaded data from file: ", scan.Text())
 		data := scan.Bytes()
 		err = json.Unmarshal(data, &metric)
 		if err != nil {
 			return nil, err
 		}
 		metrics = append(metrics, metric)
-		fmt.Println("read from file: ", metric)
+		//fmt.Println("read from file: ", metric)
 
 	}
 	return metrics, nil
