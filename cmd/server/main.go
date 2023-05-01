@@ -27,7 +27,7 @@ func MetricRouter(m *storage.MemStorage) chi.Router {
 	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
 	loggedAndZippedRouter.Get("/", handler.MainPage)
-
+	//
 	return r
 }
 
