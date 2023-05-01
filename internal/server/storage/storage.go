@@ -1,9 +1,12 @@
 package storage
 
+import "sync"
+
 // MemStorage is a storage in memory
 // it is a struct with two maps - gauges and counters
 
 type MemStorage struct {
+	mut      sync.RWMutex
 	Gauges   map[string][]float64
 	Counters map[string]int64
 	//TODO: deal with scopes
@@ -19,22 +22,30 @@ func NewMemStorage() *MemStorage {
 
 // SetGauge sets or adds a gauge value
 func (m *MemStorage) SetGauge(name string, value float64) {
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	m.Gauges[name] = append(m.Gauges[name], value)
 }
 
 // SetCounter sets a counter value
 func (m *MemStorage) SetCounter(name string, value int64) {
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	m.Counters[name] = value
 }
 
 // GetGauge gets a gauge value
 func (m *MemStorage) GetGauge(name string) ([]float64, bool) {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
 	value, ok := m.Gauges[name]
 	return value, ok
 }
 
 // GetCounter gets a counter value
 func (m *MemStorage) GetCounter(name string) (int64, bool) {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
 	value, ok := m.Counters[name]
 	return value, ok
 }
@@ -50,6 +61,8 @@ func (m *MemStorage) GetAllCounters() map[string]int64 {
 }
 
 func (m *MemStorage) GetAllMetricsSliced() []Metrics {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
 	var metrics []Metrics
 	for key, value := range m.Gauges {
 		metrics = append(metrics, Metrics{
@@ -70,6 +83,8 @@ func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 
 // RestoreMetrics restores metrics from slice
 func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	for _, metric := range metrics {
 		switch metric.MType {
 		case "gauge":
