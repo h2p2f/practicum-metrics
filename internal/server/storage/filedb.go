@@ -26,6 +26,21 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+func NewMetricsCounter(ID, MType string, delta int64) *Metrics {
+	return &Metrics{
+		ID:    ID,
+		MType: MType,
+		Delta: &delta,
+	}
+}
+func NewMetricsGauge(ID, MType string, value float64) *Metrics {
+	return &Metrics{
+		ID:    ID,
+		MType: MType,
+		Value: &value,
+	}
+}
+
 // NewFileDB is a function that returns a new fileDB
 func NewFileDB(filePath string, interval time.Duration) *FileDB {
 	return &FileDB{
@@ -36,7 +51,7 @@ func NewFileDB(filePath string, interval time.Duration) *FileDB {
 
 // SaveToFile is a function that saves metrics to file
 func (f *FileDB) SaveToFile(metrics []Metrics) (err error) {
-
+	//fmt.Println("saving to file", metrics)
 	f.File, err = os.OpenFile(f.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	defer func() {
 		if err := f.File.Close(); err != nil {

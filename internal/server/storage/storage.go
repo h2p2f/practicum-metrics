@@ -1,5 +1,7 @@
 package storage
 
+import "fmt"
+
 // MemStorage is a storage in memory
 // it is a struct with two maps - gauges and counters
 
@@ -62,19 +64,19 @@ func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 	//m.mut.Lock()
 	//defer m.mut.Unlock()
 	var metrics []Metrics
-	for key, value := range m.Counters {
-		metrics = append(metrics, Metrics{
-			ID:    key,
-			MType: "counter",
-			Delta: &value,
-		})
+	for key, value := range m.GetAllCounters() {
+		met := NewMetricsCounter(key, "counter", value)
+		//met.Delta = &value
+		fmt.Println(key, value)
+		fmt.Println(met)
+		metrics = append(metrics, *met)
+
 	}
 	for key, value := range m.Gauges {
-		metrics = append(metrics, Metrics{
-			ID:    key,
-			MType: "gauge",
-			Value: &value[len(value)-1],
-		})
+		met := NewMetricsGauge(key, "gauge", value[len(value)-1])
+		//met.Value = &value[len(value)-1]
+		metrics = append(metrics, *met)
+
 	}
 	return metrics
 }

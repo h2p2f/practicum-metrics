@@ -107,16 +107,7 @@ func main() {
 				Post(host + "/update/")
 			if err != nil {
 
-				log.Fatalf("Error: %v", err) //panic(err)
-				//if errors.Is(err, syscall.EPIPE) {
-				//	time.Sleep(100 * time.Millisecond)
-				//	resp, err = client.R().
-				//		SetHeader("Content-Type", "application/json").
-				//		SetHeader("Content-Encoding", "gzip").
-				//		SetBody(buf).
-				//		Post(host + "/update/")
-				//	if err != nil {
-				//		log.Fatalf("Error: %v", err)
+				log.Fatalf("Error: %v", err)
 
 			}
 			fmt.Println("received response from server: ", resp.StatusCode())
