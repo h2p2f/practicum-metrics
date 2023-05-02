@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+//TODO: put in order this code
+
 // FileDB is a struct that contains file path and interval to store metrics, mutex, file
 type FileDB struct {
 	File     *os.File
@@ -26,6 +28,7 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+// NewMetricsCounter is a constructor function that returns a new counter struct
 func NewMetricsCounter(ID, MType string, delta int64) *Metrics {
 	return &Metrics{
 		ID:    ID,
@@ -33,6 +36,8 @@ func NewMetricsCounter(ID, MType string, delta int64) *Metrics {
 		Delta: &delta,
 	}
 }
+
+// NewMetricsGauge is a constructor function that returns a new gauge struct
 func NewMetricsGauge(ID, MType string, value float64) *Metrics {
 	return &Metrics{
 		ID:    ID,

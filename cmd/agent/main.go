@@ -45,7 +45,7 @@ func main() {
 	var r, p int
 	//parse flags
 	flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
-	//DurationVar is not working, so I use IntVar with conversion to Duration. TODO: fix it
+	//TODO: fix this shitcode
 	flag.IntVar(&r, "r", 10, "report to server interval in seconds")
 	flag.IntVar(&p, "p", 2, "pool interval in seconds")
 	flag.Parse()
@@ -75,12 +75,14 @@ func main() {
 	//set host
 
 	host := "http://"
+	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
 	if isNumeric(flagRunPort) {
 		host = host + "localhost:" + flagRunPort
 	} else if !strings.Contains(flagRunPort, host) {
 		host += flagRunPort
 	}
 	//print info
+	//TODO: add normal logging
 	fmt.Println("Running agent for server:", host)
 	fmt.Println("Report to server interval:", reportInterval)
 	fmt.Println("Pool interval:", poolInterval)
@@ -91,25 +93,32 @@ func main() {
 	go getMetrics(m, poolInterval)
 	//start reporting in main goroutine
 	for {
+		//we sleep here, because we need to report metrics after poolInterval
 		time.Sleep(reportInterval * time.Second)
+		//get metrics in json format
 		jsonMetrics := m.JSONMetrics()
+		//prepare metrics to send
 		for _, data := range jsonMetrics {
+			//compress data, this comment wrote captain obvious
 			buf, err := Compress(data)
 			if err != nil {
 				log.Fatalf("Error: %v", err)
 			}
+			//send data to server
 			client := resty.New()
+			//some autotests can be faster than server starts, so we need to retry three times, not more :)
 			client.SetRetryCount(3).SetRetryWaitTime(200 * time.Millisecond)
+			//upgrading request's headers
 			resp, err := client.R().
 				SetHeader("Content-Type", "application/json").
 				SetHeader("Content-Encoding", "gzip").
 				SetBody(buf).
 				Post(host + "/update/")
 			if err != nil {
-
 				log.Fatalf("Error: %v", err)
-
 			}
+			//TODO: add normal logging
+			//print response status code
 			fmt.Println("received response from server: ", resp.StatusCode())
 
 		}
@@ -118,6 +127,7 @@ func main() {
 
 }
 
+// function Compress to compress data
 func Compress(data []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	gz := gzip.NewWriter(buf)

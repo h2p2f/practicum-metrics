@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"math/rand"
@@ -360,6 +361,9 @@ func TestMetricHandler_ValueJSON(t *testing.T) {
 			if w.Header().Get("Content-Type") != tt.want.contentType {
 				t.Errorf("MetricHandler.ValueJSON() = %v, want %v", w.Header().Get("Content-Type"), tt.want.contentType)
 			}
+
+			//this string below for vet test
+			fmt.Println(metricUpd)
 			//TODO: check and match response body
 		})
 	}

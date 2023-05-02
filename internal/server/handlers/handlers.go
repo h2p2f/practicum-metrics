@@ -174,6 +174,7 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 
 // UpdateJSON is a handler for metrics (POST requests)
 func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
+	//check method and content-type
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -182,6 +183,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	//read request body and unmarshal it to MetricFromRequest
 	var buf bytes.Buffer
 	var MetricFromRequest Metrics
 
@@ -210,8 +212,12 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Not implemented", http.StatusNotImplemented)
 		}
 	}
+	//prepare response
 	response, _ := json.Marshal(MetricFromRequest)
 	w.Header().Add("Content-Type", "application/json")
+	//this code below does not work with gzip middleware
+	//so i hard nailed the header in the middleware code
+	//TODO: fix it
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(response)
 	if err != nil {
@@ -222,6 +228,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 
 // ValueJSON is a handler for metrics (POST requests to /value)
 func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
+	//check method and content-type
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -230,6 +237,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	//read request body and unmarshal it to MetricFromRequest
 	var buf bytes.Buffer
 	var MetricFromRequest Metrics
 	_, err := buf.ReadFrom(r.Body)
@@ -241,6 +249,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	//prepare response
 	switch strings.ToLower(MetricFromRequest.MType) {
 	case "counter":
 		{
@@ -261,6 +270,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 			MetricFromRequest.Value = &value[len(value)-1]
 		}
 	}
+	//still prepare response
 	response, err := json.Marshal(MetricFromRequest)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)

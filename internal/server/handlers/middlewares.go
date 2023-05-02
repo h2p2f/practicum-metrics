@@ -12,11 +12,13 @@ func GzipHanle(next http.Handler) http.Handler {
 		contentEncoding := r.Header.Get("Content-Encoding")
 		supportGzip := strings.Contains(acceptEncoding, "gzip")
 		sendGzip := strings.Contains(contentEncoding, "gzip")
-
+		// this section for ordinary request
 		if !supportGzip && !sendGzip {
+			w.Header().Set("Content-Type", "application/json")
 			next.ServeHTTP(w, r)
 			return
 		}
+		// this section for request with accept-encoding: gzip
 		if supportGzip && !sendGzip {
 			originWriter := w
 			compressedWriter := NewCompressWriter(w)
@@ -24,38 +26,23 @@ func GzipHanle(next http.Handler) http.Handler {
 			originWriter = compressedWriter
 			originWriter.Header().Set("Content-Encoding", "gzip")
 			defer compressedWriter.Close()
-			//defer func() {
-			//	err := compressedWriter.Close()
-			//	if err != nil {
-			//		w.WriteHeader(http.StatusInternalServerError)
-			//	}
-			//}()
+
 			next.ServeHTTP(originWriter, r)
 		}
+		// this section for request with content-encoding: gzip
 		if sendGzip {
 			originWriter := w
 			compressedWriter := NewCompressWriter(w)
 			originWriter = compressedWriter
 			originWriter.Header().Set("Content-Encoding", "gzip")
 			defer compressedWriter.Close()
-			//defer func() {
-			//	err := compressedWriter.Close()
-			//	if err != nil {
-			//		w.WriteHeader(http.StatusInternalServerError)
-			//	}
-			//}()
+
 			compressedReader, err := NewCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 			r.Body = compressedReader
 			defer compressedReader.Close()
-			//defer func() {
-			//	err := compressedReader.Close()
-			//	if err != nil {
-			//		w.WriteHeader(http.StatusInternalServerError)
-			//	}
-			//}()
 
 			next.ServeHTTP(originWriter, r)
 

@@ -6,6 +6,7 @@ import "fmt"
 // it is a struct with two maps - gauges and counters
 
 type MemStorage struct {
+	//mutex is suspended work with files TODO: fix it
 	//mut      sync.RWMutex
 	Gauges   map[string][]float64
 	Counters map[string]int64
@@ -60,6 +61,12 @@ func (m *MemStorage) GetAllCounters() map[string]int64 {
 	return m.Counters
 }
 
+// GetAllMetricsSliced gets all metrics
+// this code is not beautiful
+// but i received a some bug with pointers
+// if i put counters value to Metrics struct directly
+// i receive the same pointer for all counters
+// so i implemented via constructor
 func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 	//m.mut.Lock()
 	//defer m.mut.Unlock()

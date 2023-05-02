@@ -48,13 +48,12 @@ func getFlagsAndEnv() (string, time.Duration, string, bool) {
 		}
 		flagRestore = envRestore
 	}
-	//hardcode for users, who can't read documentation and use flags like -a 8080
+	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
 	host := "localhost:"
 	if isNumeric(flagRunAddr) {
 		flagRunAddr = host + flagRunAddr
 		fmt.Println("Running server on", flagRunAddr)
 	}
-	//fmt.Println(flagRunAddr, flagStoreInterval, flagStorePath, flagRestore)
 	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore
 }
 
