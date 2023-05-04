@@ -1,3 +1,84 @@
 package main
 
-func main() {}
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/database"
+	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+)
+
+// MetricRouter function to create chi router
+func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
+	//get handlers
+	handler := handlers.NewMetricHandler(m, db)
+	//create router
+	r := chi.NewRouter()
+	//add middlewares
+	loggedAndZippedRouter := r.With(logger.WithLogging, handlers.GzipHanle)
+	loggedRouter := r.With(logger.WithLogging)
+	//add routes
+	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
+	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
+	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
+	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
+	loggedRouter.Get("/ping", handler.DBPing)
+	loggedAndZippedRouter.Get("/", handler.MainPage)
+	//
+	return r
+}
+
+func main() {
+	//setup new config
+	conf := config.NewConfig()
+	//set config from flags and env
+	conf.SetConfig(getFlagsAndEnv())
+
+	//create storage
+	m := storage.NewMemStorage()
+	pgDB := database.NewPostgresDB(conf.Database)
+	defer pgDB.Close()
+
+	//create fileDB with path and interval from config
+	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
+
+	//restore metrics from file if flag is set
+	if conf.Restore {
+		metrics, err := fileDB.ReadFromFile()
+		if err != nil {
+			fmt.Println(err)
+		}
+		m.RestoreMetrics(metrics)
+	}
+	//save metrics to file with interval from config
+	//made with anonymous function and goroutine
+	go func() {
+		for {
+			time.Sleep(conf.StoreInterval * time.Second)
+			met := m.GetAllMetricsSliced()
+			fmt.Println(met)
+			err := fileDB.SaveToFile(met)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}()
+	//init logger
+	if err := logger.InitLogger("info"); err != nil {
+		log.Fatal(err)
+	}
+
+	//start server with router
+	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
+	logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
+	logger.Log.Sugar().Infof("path to store file %s", conf.PathToStoreFile)
+	logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
+	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
+
+}
