@@ -143,6 +143,9 @@ func TestFileDB_SaveToFile(t *testing.T) {
 				data := []byte(line)
 				metric := Metrics{}
 				err = json.Unmarshal(data, &metric)
+				if err != nil {
+					log.Fatalf("error while opening file: %s", err)
+				}
 				want = append(want, metric)
 			}
 			err = f.SaveToFile(want)
@@ -150,6 +153,9 @@ func TestFileDB_SaveToFile(t *testing.T) {
 				log.Fatalf("error while opening file: %s", err)
 			}
 			gotMetrics, err := f.ReadFromFile()
+			if err != nil {
+				t.Errorf("ReadFromFile() error = %v", err)
+			}
 			assert.Equalf(t, want, gotMetrics, "SaveToFile()")
 		})
 	}
