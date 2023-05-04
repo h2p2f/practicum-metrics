@@ -291,7 +291,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *MetricHandler) DbPing(w http.ResponseWriter, r *http.Request) {
+func (m *MetricHandler) DBPing(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return

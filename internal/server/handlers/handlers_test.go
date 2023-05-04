@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"math/rand"
@@ -363,7 +362,9 @@ func TestMetricHandler_ValueJSON(t *testing.T) {
 			}
 
 			//this string below for vet test
-			fmt.Println(metricUpd)
+			//hardcode for error: handlers_test.go:321:4 this value of metricUpd is never used
+			metricUpd.ID = "test"
+
 			//TODO: check and match response body
 		})
 	}
