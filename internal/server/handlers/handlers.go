@@ -303,5 +303,8 @@ func (m *MetricHandler) DbPing(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-	w.Write([]byte("pong"))
+	_, err := w.Write([]byte("pong"))
+	if err != nil {
+		return
+	}
 }
