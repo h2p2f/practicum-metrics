@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Storager is an interface for storage
@@ -21,9 +23,14 @@ type Storager interface {
 	//GetAllMetricsSliced() []Metrics
 }
 
+type DataBaser interface {
+	PingContext(ctx context.Context) error
+}
+
 // MetricHandler is a handler for metrics
 type MetricHandler struct {
 	Storage Storager
+	DB      DataBaser
 }
 
 // Metrics is a struct for metrics with json tags
@@ -35,8 +42,8 @@ type Metrics struct {
 }
 
 // NewMetricHandler creates a new MetricHandler
-func NewMetricHandler(s Storager) *MetricHandler {
-	return &MetricHandler{Storage: s}
+func NewMetricHandler(s Storager, baser DataBaser) *MetricHandler {
+	return &MetricHandler{Storage: s, DB: baser}
 }
 
 // UpdatePage is a handler for metrics (POST requests)
@@ -282,4 +289,19 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (m *MetricHandler) DbPing(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := m.DB.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+	w.Write([]byte("pong"))
 }

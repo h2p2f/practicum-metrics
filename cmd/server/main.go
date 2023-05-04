@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"log"
@@ -13,9 +14,9 @@ import (
 )
 
 // MetricRouter function to create chi router
-func MetricRouter(m *storage.MemStorage) chi.Router {
+func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 	//get handlers
-	handler := handlers.NewMetricHandler(m)
+	handler := handlers.NewMetricHandler(m, db)
 	//create router
 	r := chi.NewRouter()
 	//add middlewares
@@ -26,6 +27,7 @@ func MetricRouter(m *storage.MemStorage) chi.Router {
 	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
+	loggedRouter.Get("/ping", handler.DbPing)
 	loggedAndZippedRouter.Get("/", handler.MainPage)
 	//
 	return r
@@ -39,6 +41,8 @@ func main() {
 
 	//create storage
 	m := storage.NewMemStorage()
+	pgDB := database.NewPostgresDB(conf.Database)
+	defer pgDB.Close()
 
 	//create fileDB with path and interval from config
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
@@ -74,6 +78,6 @@ func main() {
 	logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
 	logger.Log.Sugar().Infof("path to store file %s", conf.PathToStoreFile)
 	logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
-	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m)))
+	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
 
 }

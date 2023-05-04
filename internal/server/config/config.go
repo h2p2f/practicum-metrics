@@ -19,6 +19,8 @@ type serverConfig struct {
 	PathToStoreFile string
 	// restore metrics from file
 	Restore bool
+
+	Database string
 }
 
 // NewConfig is a function that returns a new config
@@ -28,6 +30,7 @@ func NewConfig() *serverConfig {
 		StoreInterval:   300,
 		PathToStoreFile: "/tmp/devops-metrics-db.json",
 		Restore:         true,
+		Database:        "host=localhost user=practicum password=yandex dbname=postgres sslmode=disable",
 	}
 }
 
@@ -39,10 +42,11 @@ func (c *serverConfig) GetConfig() *serverConfig {
 }
 
 // SetConfig is a function that sets config
-func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool) *serverConfig {
+func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool, db string) *serverConfig {
 	c.ServerAddress = address
 	c.StoreInterval = interval
 	c.PathToStoreFile = path
 	c.Restore = restore
+	c.Database = db
 	return c
 }

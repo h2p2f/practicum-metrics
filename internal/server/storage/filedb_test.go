@@ -79,6 +79,9 @@ func TestFileDB_ReadFromFile(t *testing.T) {
 			}
 
 			gotMetrics, err := f.ReadFromFile()
+			if err != nil {
+				t.Errorf("ReadFromFile() error = %v", err)
+			}
 
 			assert.Equalf(t, want, gotMetrics, "ReadFromFile()")
 		})
