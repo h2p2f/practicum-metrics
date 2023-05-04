@@ -38,7 +38,7 @@ func (pgdb *PGDB) CreateTable(ctx context.Context) (err error) {
 		    id text not null,
 		    mtype text not null,
 		    delta bigint,
-		    value double precision,
+		    value double precision
 		    );`
 	_, err = pgdb.db.ExecContext(ctx, query)
 	if err != nil {
