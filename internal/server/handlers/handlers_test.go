@@ -317,7 +317,7 @@ func TestMetricHandler_ValueJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			delta := rand.Int63()
 			value := rand.Float64()
-			var metricUpd Metrics = Metrics{}
+			var metricUpd = Metrics{}
 			//metricUpd := Metrics{}
 			metricsVal := Metrics{
 				ID:    tt.metricName,
