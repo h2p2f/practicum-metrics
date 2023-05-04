@@ -64,6 +64,26 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
+		{
+			name:        "Negative test 3",
+			metric:      "counter",
+			metricName:  "test",
+			metricValue: "-3",
+			want: want{
+				statusCode:  400,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:        "Negative test 4",
+			metric:      "gauge",
+			metricName:  "test",
+			metricValue: "-10.0000000000001",
+			want: want{
+				statusCode:  400,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,6 +154,16 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			metricValue: "1/1",
 			want: want{
 				statusCode:  404,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:        "Negative test 3",
+			metric:      "",
+			metricName:  "test",
+			metricValue: "1/1",
+			want: want{
+				statusCode:  400,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -267,7 +297,7 @@ func TestMetricHandler_MainPage(t *testing.T) {
 	}
 }
 
-func TestMetricHandler_ValueJSON(t *testing.T) {
+func TestMetricHandler_UpdateAndValueJSON(t *testing.T) {
 	type want struct {
 		statusCode  int
 		contentType string
@@ -308,6 +338,26 @@ func TestMetricHandler_ValueJSON(t *testing.T) {
 			want: want{
 				statusCode:  200,
 				contentType: "application/json",
+			},
+		},
+		{
+			name:       "Negative test 1",
+			metric:     "gauge",
+			metricName: "",
+
+			want: want{
+				statusCode:  400,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:       "Negative test 2",
+			metric:     "",
+			metricName: "SomeMetric",
+
+			want: want{
+				statusCode:  400,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}

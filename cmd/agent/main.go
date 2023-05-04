@@ -3,18 +3,17 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	//"errors"
 	"flag"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/h2p2f/practicum-metrics/internal/client/metrics"
 	"log"
 	"os"
 	"strconv"
 	"strings"
-	//"syscall"
 	"time"
 	"unicode"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/h2p2f/practicum-metrics/internal/client/metrics"
 )
 
 // these variables for start up flags

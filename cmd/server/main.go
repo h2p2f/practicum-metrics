@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
-	"log"
-	"net/http"
-	"time"
 )
 
 // MetricRouter function to create chi router

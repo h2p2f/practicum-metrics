@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // Storager is an interface for storage
@@ -20,7 +21,6 @@ type Storager interface {
 	GetCounter(name string) (int64, bool)
 	GetAllGauges() map[string][]float64
 	GetAllCounters() map[string]int64
-	//GetAllMetricsSliced() []Metrics
 }
 
 type DataBaser interface {
@@ -61,11 +61,19 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 	value := chi.URLParam(r, "value")
 	//prepare metric and set value
+	if metric == "" || key == "" || value == "" {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
 	switch strings.ToLower(metric) {
 	case "counter":
 		{
 			n, err := strconv.ParseInt(value, 0, 64)
 			if err != nil {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
+			}
+			if n < 0 {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
@@ -77,6 +85,10 @@ func (m *MetricHandler) UpdatePage(w http.ResponseWriter, r *http.Request) {
 		{
 			n, err := strconv.ParseFloat(value, 64)
 			if err != nil {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
+			}
+			if n < 0 {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
@@ -104,6 +116,10 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 	//get metric and key from request with chi's URLParam
 	metric := chi.URLParam(r, "metric")
 	key := chi.URLParam(r, "key")
+	if metric == "" || key == "" {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
 	//get metric and return value
 	switch strings.ToLower(metric) {
 	case "counter":
@@ -203,15 +219,27 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	if MetricFromRequest.ID == "" || MetricFromRequest.MType == "" {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
 	switch strings.ToLower(MetricFromRequest.MType) {
 	case "counter":
 		{
+			if *MetricFromRequest.Delta < 0 {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
+			}
 			currentValue, _ := m.Storage.GetCounter(MetricFromRequest.ID)
 			m.Storage.SetCounter(MetricFromRequest.ID, *MetricFromRequest.Delta+currentValue)
 			*MetricFromRequest.Delta = *MetricFromRequest.Delta + currentValue
 		}
 	case "gauge":
 		{
+			if *MetricFromRequest.Value < 0 {
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
+			}
 			m.Storage.SetGauge(MetricFromRequest.ID, *MetricFromRequest.Value)
 		}
 	default:
@@ -253,6 +281,10 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = json.Unmarshal(buf.Bytes(), &MetricFromRequest); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	if MetricFromRequest.ID == "" || MetricFromRequest.MType == "" {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}

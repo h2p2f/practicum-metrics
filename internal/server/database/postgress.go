@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"log"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type PGDB struct {
