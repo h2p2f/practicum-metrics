@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,6 +36,11 @@ func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 }
 
 func main() {
+
+	//init logger
+	if err := logger.InitLogger("info"); err != nil {
+		log.Fatal(err)
+	}
 	//setup new config
 	conf := config.NewConfig()
 	//set config from flags and env
@@ -47,38 +53,75 @@ func main() {
 
 	//create fileDB with path and interval from config
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
-
+	if conf.UseDB {
+		conf.UseFile = false
+	}
 	//restore metrics from file if flag is set
-	if conf.Restore {
+	if conf.UseFile && conf.Restore {
 		metrics, err := fileDB.ReadFromFile()
 		if err != nil {
 			fmt.Println(err)
 		}
 		m.RestoreMetrics(metrics)
 	}
+	if conf.UseDB {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := pgDB.CreateTable(ctx)
+		if err != nil {
+			logger.Log.Sugar().Errorf("Error creating DB table: %s", err)
+		}
+		if conf.Restore {
+			metrics, err := pgDB.ReadFromDB(ctx)
+			if err != nil {
+				logger.Log.Sugar().Errorf("Error reading metrics from DB: %s", err)
+			}
+			m.RestoreMetric(metrics)
+		}
+		go func() {
+			for {
+				time.Sleep(conf.StoreInterval * time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				met := m.GetAllInBytesSliced()
+				//fmt.Println(met)
+				err := pgDB.SaveToDB(ctx, met)
+				if err != nil {
+					fmt.Println(err)
+				}
+				cancel()
+			}
+		}()
+	}
+
 	//save metrics to file with interval from config
 	//made with anonymous function and goroutine
-	go func() {
-		for {
-			time.Sleep(conf.StoreInterval * time.Second)
-			met := m.GetAllMetricsSliced()
-			fmt.Println(met)
-			err := fileDB.SaveToFile(met)
-			if err != nil {
-				fmt.Println(err)
+	if conf.UseFile {
+		go func() {
+			for {
+				time.Sleep(conf.StoreInterval * time.Second)
+				met := m.GetAllMetricsSliced()
+				fmt.Println(met)
+				err := fileDB.SaveToFile(met)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
-		}
-	}()
-	//init logger
-	if err := logger.InitLogger("info"); err != nil {
-		log.Fatal(err)
+		}()
 	}
 
 	//start server with router
 	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
-	logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
-	logger.Log.Sugar().Infof("path to store file %s", conf.PathToStoreFile)
-	logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
+	if conf.UseDB {
+		logger.Log.Sugar().Infof("with DB %s", conf.Database)
+		logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
+		logger.Log.Sugar().Infof("restore from DB %t", conf.Restore)
+	}
+	if conf.UseFile {
+		logger.Log.Sugar().Infof("with file %s", conf.PathToStoreFile)
+		logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
+		logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
+	}
+
 	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
 
 }

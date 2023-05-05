@@ -3,10 +3,18 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+type metrics struct {
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
 
 type PGDB struct {
 	db *sql.DB
@@ -65,6 +73,56 @@ func (pgdb *PGDB) UpdateMetric(ctx context.Context, id string, mtype string, del
 	if err != nil {
 		log.Println(err)
 		return err
+	}
+	return nil
+}
+
+func (pgdb *PGDB) ReadFromDB(ctx context.Context) ([][]byte, error) {
+	var result [][]byte
+	rows, err := pgdb.db.QueryContext(ctx, "SELECT * FROM metrics;")
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	var met metrics
+	for rows.Next() {
+		err = rows.Scan(&met.ID, &met.MType, &met.Delta, &met.Value)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		metJSON, err := json.Marshal(met)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		result = append(result, metJSON)
+	}
+	return result, nil
+}
+
+func (pgdb *PGDB) SaveToDB(ctx context.Context, met [][]byte) error {
+	truncQuery := `TRUNCATE TABLE metrics;`
+	_, err := pgdb.db.ExecContext(ctx, truncQuery)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	for _, metric := range met {
+		var met metrics
+		err = json.Unmarshal(metric, &met)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		_, err = pgdb.db.ExecContext(ctx,
+			"INSERT INTO metrics (id, mtype, delta, value) VALUES ($1, $2, $3, $4);",
+			met.ID, met.MType, met.Delta, met.Value)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 	return nil
 }

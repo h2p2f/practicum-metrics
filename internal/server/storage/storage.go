@@ -1,6 +1,10 @@
 package storage
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+)
 
 // MemStorage is a storage in memory
 // it is a struct with two maps - gauges and counters
@@ -11,6 +15,13 @@ type MemStorage struct {
 	Gauges   map[string][]float64
 	Counters map[string]int64
 	//TODO: deal with scopes
+}
+
+type metrics struct {
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
 }
 
 // NewMemStorage creates a new MemStorage
@@ -88,6 +99,28 @@ func (m *MemStorage) GetAllMetricsSliced() []Metrics {
 	return metrics
 }
 
+func (m *MemStorage) GetAllInBytesSliced() [][]byte {
+	var result [][]byte
+
+	for metric, value := range m.GetAllGauges() {
+		met := metrics{ID: metric, MType: "gauge", Value: &value[len(value)-1]}
+		out, err := json.Marshal(met)
+		if err != nil {
+			log.Fatal(err)
+		}
+		result = append(result, out)
+	}
+	for metric, value := range m.GetAllCounters() {
+		met := metrics{ID: metric, MType: "counter", Delta: &value}
+		out, err := json.Marshal(met)
+		if err != nil {
+			log.Fatal(err)
+		}
+		result = append(result, out)
+	}
+	return result
+}
+
 // RestoreMetrics restores metrics from slice
 func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
 	//m.mut.Lock()
@@ -101,6 +134,26 @@ func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
 		case "gauge":
 			{
 				m.SetGauge(metric.ID, *metric.Value)
+			}
+		}
+	}
+}
+
+func (m *MemStorage) RestoreMetric(data [][]byte) {
+	var met metrics
+	for _, value := range data {
+		err := json.Unmarshal(value, &met)
+		if err != nil {
+			log.Fatal(err)
+		}
+		switch met.MType {
+		case "counter":
+			{
+				m.SetCounter(met.ID, *met.Delta)
+			}
+		case "gauge":
+			{
+				m.SetGauge(met.ID, *met.Value)
 			}
 		}
 	}
