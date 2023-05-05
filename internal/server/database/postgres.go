@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -24,6 +25,7 @@ type PGDB struct {
 func NewPostgresDB(param string) *PGDB {
 	db, err := sql.Open("pgx", param)
 	if err != nil {
+		fmt.Println("Error opening database connection: ", err)
 		log.Fatal(err)
 	}
 	return &PGDB{db: db}
@@ -81,6 +83,10 @@ func (pgdb *PGDB) ReadFromDB(ctx context.Context) ([][]byte, error) {
 	var result [][]byte
 	rows, err := pgdb.db.QueryContext(ctx, "SELECT * FROM metrics;")
 	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if rows.Err() != nil {
 		log.Println(err)
 		return nil, err
 	}

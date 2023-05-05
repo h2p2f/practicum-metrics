@@ -65,6 +65,7 @@ func main() {
 		m.RestoreMetrics(metrics)
 	}
 	if conf.UseDB {
+		logger.Log.Sugar().Info("trying to use DB")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		err := pgDB.CreateTable(ctx)
