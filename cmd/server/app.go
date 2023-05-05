@@ -51,6 +51,10 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 	}
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
 		var err error
+		if isNumeric(envStoreInterval) {
+			envStoreInterval = envStoreInterval + "s"
+
+		}
 		flagStoreInterval, err = time.ParseDuration(envStoreInterval)
 		if err != nil {
 			fmt.Println(err)
@@ -63,7 +67,7 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
 		envRestore, err := strconv.ParseBool(envRestore)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		flagRestore = envRestore
 	}
