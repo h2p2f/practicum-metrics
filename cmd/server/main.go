@@ -121,7 +121,7 @@ func main() {
 		logger.Log.Sugar().Infof("with param: store interval %s", conf.StoreInterval)
 		logger.Log.Sugar().Infof("restore from file %t", conf.Restore)
 	}
-
+	//logger.Log.Sugar().Infof("startup params", conf.UseDB, conf.UseFile, conf.Restore, conf.StoreInterval, conf.PathToStoreFile, conf.Database)
 	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
 
 }

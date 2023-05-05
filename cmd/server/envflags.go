@@ -56,7 +56,7 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		}
 		flagStoreInterval = time.Duration(envStoreInterval)
 	}
-	if envStorePath := os.Getenv("STORE_FILE"); envStorePath != "" {
+	if envStorePath := os.Getenv("FILE_STORAGE_PATH"); envStorePath != "" {
 		flagStorePath = envStorePath
 		useFile = true
 	}
