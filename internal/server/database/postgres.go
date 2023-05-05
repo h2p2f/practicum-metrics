@@ -26,7 +26,7 @@ func NewPostgresDB(param string) *PGDB {
 	db, err := sql.Open("pgx", param)
 	if err != nil {
 		fmt.Println("Error opening database connection: ", err)
-		log.Fatal(err)
+		log.Println(err)
 	}
 	return &PGDB{db: db}
 }
