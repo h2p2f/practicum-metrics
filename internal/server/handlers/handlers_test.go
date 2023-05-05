@@ -271,7 +271,7 @@ func TestMetricHandler_MainPage(t *testing.T) {
 			want: want{
 				statusCode:  200,
 				contentType: "text/html",
-				header:      "<h1>Metrics</h1>",
+				header:      "<h1>metrics</h1>",
 			},
 		},
 	}
@@ -367,20 +367,20 @@ func TestMetricHandler_UpdateAndValueJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			delta := rand.Int63()
 			value := rand.Float64()
-			var metricUpd = Metrics{}
-			//metricUpd := Metrics{}
-			metricsVal := Metrics{
+			var metricUpd = metrics{}
+			//metricUpd := metrics{}
+			metricsVal := metrics{
 				ID:    tt.metricName,
 				MType: tt.metric,
 			}
 			if tt.metric == "counter" {
-				metricUpd = Metrics{
+				metricUpd = metrics{
 					ID:    tt.metricName,
 					MType: tt.metric,
 					Delta: &delta,
 				}
 			} else {
-				metricUpd = Metrics{
+				metricUpd = metrics{
 					ID:    tt.metricName,
 					MType: tt.metric,
 					Value: &value,

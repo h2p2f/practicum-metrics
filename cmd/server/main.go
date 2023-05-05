@@ -27,6 +27,7 @@ func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 	//add routes
 	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
 	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
+	loggedAndZippedRouter.Post("/updates/", handler.UpdatesBatch)
 	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
 	loggedRouter.Get("/ping", handler.DBPing)

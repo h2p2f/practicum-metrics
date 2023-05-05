@@ -50,11 +50,11 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		useDatabase = true
 	}
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
-		envStoreInterval, err := strconv.Atoi(envStoreInterval)
+		var err error
+		flagStoreInterval, err = time.ParseDuration(envStoreInterval)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
-		flagStoreInterval = time.Duration(envStoreInterval)
 	}
 	if envStorePath := os.Getenv("FILE_STORAGE_PATH"); envStorePath != "" {
 		flagStorePath = envStorePath

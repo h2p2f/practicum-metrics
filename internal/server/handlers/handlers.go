@@ -33,8 +33,8 @@ type MetricHandler struct {
 	DB      DataBaser
 }
 
-// Metrics is a struct for metrics with json tags
-type Metrics struct {
+// metrics is a struct for metrics with json tags
+type metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
@@ -174,7 +174,7 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	//prepare response
 	w.Header().Add("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("<h1>Metrics</h1>"))
+	_, err := w.Write([]byte("<h1>metrics</h1>"))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -208,7 +208,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	//read request body and unmarshal it to MetricFromRequest
 	var buf bytes.Buffer
-	var MetricFromRequest Metrics
+	var MetricFromRequest metrics
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
@@ -274,7 +274,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	//read request body and unmarshal it to MetricFromRequest
 	var buf bytes.Buffer
-	var MetricFromRequest Metrics
+	var MetricFromRequest metrics
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -338,5 +338,49 @@ func (m *MetricHandler) DBPing(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("pong"))
 	if err != nil {
 		return
+	}
+}
+
+func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var buf bytes.Buffer
+	var MetricsFromRequest []metrics
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	if err = json.Unmarshal(buf.Bytes(), &MetricsFromRequest); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	for _, metric := range MetricsFromRequest {
+		switch strings.ToLower(metric.MType) {
+		case "counter":
+			{
+				if *metric.Delta < 0 {
+					http.Error(w, "Bad request", http.StatusBadRequest)
+					return
+				}
+				currentValue, _ := m.Storage.GetCounter(metric.ID)
+				m.Storage.SetCounter(metric.ID, *metric.Delta+currentValue)
+				*metric.Delta = *metric.Delta + currentValue
+			}
+		case "gauge":
+			{
+				if *metric.Value < 0 {
+					http.Error(w, "Bad request", http.StatusBadRequest)
+					return
+				}
+				m.Storage.SetGauge(metric.ID, *metric.Value)
+			}
+		default:
+			{
+				http.Error(w, "Not implemented", http.StatusNotImplemented)
+			}
+		}
 	}
 }
