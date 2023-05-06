@@ -1,13 +1,14 @@
 package database
 
 import (
-	"context"
 	"database/sql"
+
+	"context"
+
 	"encoding/json"
 	"fmt"
-	"log"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"log"
 )
 
 type metrics struct {

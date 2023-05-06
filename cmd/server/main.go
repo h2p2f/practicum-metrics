@@ -1,8 +1,9 @@
 package main
 
 import (
-	"context"
 	"database/sql"
+
+	"context"
 	"fmt"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
