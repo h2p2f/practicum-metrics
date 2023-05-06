@@ -2,17 +2,15 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
-
-	"database/sql"
+	"log"
+	"net/http"
+	"time"
 )
 
 var pgDB *database.PGDB
