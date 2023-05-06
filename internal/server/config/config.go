@@ -28,7 +28,7 @@ type serverConfig struct {
 func NewConfig() *serverConfig {
 	return &serverConfig{
 		ServerAddress:   "localhost:8080",
-		StoreInterval:   300,
+		StoreInterval:   300 * time.Second,
 		PathToStoreFile: "/tmp/devops-metrics-db.json",
 		Restore:         true,
 		Database:        "host=localhost user=practicum password=yandex dbname=postgres sslmode=disable",

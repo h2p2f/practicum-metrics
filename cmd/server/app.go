@@ -3,6 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/h2p2f/practicum-metrics/internal/server/database"
+	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"log"
 	"os"
 	"strconv"
@@ -18,7 +23,7 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagStorePath     string
 		flagRestore       bool
 		interval          int
-		database          string
+		databaseVar       string
 		useDatabase       bool
 		useFile           bool
 	)
@@ -30,15 +35,15 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 	flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
 	flag.StringVar(&flagStorePath, "f", "/tmp/devops-metrics-db.json", "path to store metrics")
 	flag.BoolVar(&flagRestore, "r", true, "restore metrics from file")
-	flag.StringVar(&database, "d",
+	flag.StringVar(&databaseVar, "d",
 		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-		"database to store metrics")
+		"databaseVar to store metrics")
 
 	//postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable
 	//host=localhost user=practicum password=yandex dbname=postgres sslmode=disable
 	flag.Parse()
 	// convert int to duration
-	flagStoreInterval = time.Duration(interval)
+	flagStoreInterval = time.Duration(interval) * time.Second
 	// get env variables, if they exist drop flags
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
@@ -72,7 +77,7 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagRestore = envRestore
 	}
 	if envDatabase := os.Getenv("DATABASE_DSN"); envDatabase != "" {
-		database = envDatabase
+		databaseVar = envDatabase
 		useDatabase = true
 	}
 	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
@@ -81,7 +86,7 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagRunAddr = host + flagRunAddr
 		fmt.Println("Running server on", flagRunAddr)
 	}
-	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, database, useDatabase, useFile
+	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, databaseVar, useDatabase, useFile
 }
 
 // isNumeric is a function that checks if string contains only digits
@@ -94,6 +99,26 @@ func isNumeric(s string) bool {
 	return true
 }
 
+// MetricRouter function to create chi router
+func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
+	//get handlers
+	handler := handlers.NewMetricHandler(m, db)
+	//create router
+	r := chi.NewRouter()
+	//add middlewares
+	loggedAndZippedRouter := r.With(logger.WithLogging, handlers.GzipHanle)
+	loggedRouter := r.With(logger.WithLogging)
+	//add routes
+	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
+	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
+	loggedAndZippedRouter.Post("/updates/", handler.UpdatesBatch)
+	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
+	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
+	loggedRouter.Get("/ping", handler.DBPing)
+	loggedAndZippedRouter.Get("/", handler.MainPage)
+	//
+	return r
+}
 func isFlagPassed(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {

@@ -56,6 +56,7 @@ func (pgdb *PGDB) CreateTable(ctx context.Context) (err error) {
 		log.Println(err)
 		return err
 	}
+	fmt.Println("Table created successfully")
 	return nil
 }
 
@@ -104,10 +105,12 @@ func (pgdb *PGDB) ReadFromDB(ctx context.Context) ([][]byte, error) {
 		}
 		result = append(result, metJSON)
 	}
+	fmt.Println("Read from DB successfully")
 	return result, nil
 }
 
 func (pgdb *PGDB) SaveToDB(ctx context.Context, met [][]byte) error {
+	fmt.Println("Saving to DB...")
 	truncQuery := `TRUNCATE TABLE metrics;`
 	_, err := pgdb.db.ExecContext(ctx, truncQuery)
 	if err != nil {
@@ -130,5 +133,6 @@ func (pgdb *PGDB) SaveToDB(ctx context.Context, met [][]byte) error {
 			return err
 		}
 	}
+	fmt.Println("Saved to DB successfully")
 	return nil
 }
