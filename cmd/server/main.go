@@ -20,7 +20,7 @@ var pgDB *database.PGDB
 func main() {
 	//init logger
 	if err := logger.InitLogger("info"); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	//setup new config
 	conf := config.NewConfig()

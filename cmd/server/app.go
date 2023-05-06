@@ -22,18 +22,20 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagStoreInterval time.Duration
 		flagStorePath     string
 		flagRestore       bool
-		interval          int
-		databaseVar       string
-		useDatabase       bool
-		useFile           bool
+		//interval          int
+		IntervalDuration time.Duration
+		databaseVar      string
+		useDatabase      bool
+		useFile          bool
 	)
 	useFile = false
 	useDatabase = false
 
 	// parse flags
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
-	flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
+	//flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
 	flag.StringVar(&flagStorePath, "f", "/tmp/devops-metrics-db.json", "path to store metrics")
+	flag.DurationVar(&IntervalDuration, "i", 300*time.Second, "interval to store metrics in seconds")
 	flag.BoolVar(&flagRestore, "r", true, "restore metrics from file")
 	flag.StringVar(&databaseVar, "d",
 		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
@@ -43,8 +45,9 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 	//host=localhost user=practicum password=yandex dbname=postgres sslmode=disable
 	flag.Parse()
 	// convert int to duration
-	flagStoreInterval = time.Duration(interval) * time.Second
+	//flagStoreInterval = time.Duration(interval) * time.Second
 	// get env variables, if they exist drop flags
+	flagStoreInterval = IntervalDuration
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
 	}
