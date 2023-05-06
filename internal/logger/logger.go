@@ -65,7 +65,7 @@ func WithLogging(h http.Handler) http.Handler {
 		//this is for human-readable logging
 		Log.Sugar().Infof("Request  - method: %s, url: %s, duration: %s", r.Method, r.URL.String(), time.Since(start))
 		Log.Sugar().Infof("Request Info - Accept-Encoding: %s, Content-Encoding: %s", r.Header.Get("Accept-Encoding"), r.Header.Get("Content-Encoding"))
-		Log.Sugar().Infof("Response - status: %d, size: %d", responseData.status, responseData.size)
+		Log.Sugar().Infof("Response - status: %d, size: %d ", responseData.status, responseData.size)
 	}
 	//return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	return http.HandlerFunc(logFn)

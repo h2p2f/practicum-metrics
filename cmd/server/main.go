@@ -17,6 +17,8 @@ import (
 	sql "database/sql"
 )
 
+var pgDB *database.PGDB
+
 // MetricRouter function to create chi router
 func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 	//get handlers
@@ -39,7 +41,6 @@ func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 }
 
 func main() {
-
 	//init logger
 	if err := logger.InitLogger("info"); err != nil {
 		log.Fatal(err)
@@ -51,8 +52,6 @@ func main() {
 
 	//create storage
 	m := storage.NewMemStorage()
-	pgDB := database.NewPostgresDB(conf.Database)
-	defer pgDB.Close()
 
 	//shitcode for autotests - they check import of sql package, but can't check real import in internal/database
 	fmt.Println(sql.Drivers())
@@ -72,6 +71,8 @@ func main() {
 	}
 	if conf.UseDB {
 		logger.Log.Sugar().Info("trying to use DB")
+		pgDB = database.NewPostgresDB(conf.Database)
+		defer pgDB.Close()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		err := pgDB.CreateTable(ctx)
