@@ -12,7 +12,7 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 
-	sql "database/sql"
+	"database/sql"
 )
 
 var pgDB *database.PGDB
