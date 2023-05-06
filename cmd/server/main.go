@@ -1,14 +1,14 @@
 package main
 
 import (
-	"database/sql"
-
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+	"github.com/jackc/pgx"
 	"log"
 	"net/http"
 	"time"
@@ -21,6 +21,7 @@ func main() {
 	if err := logger.InitLogger("info"); err != nil {
 		fmt.Println(err)
 	}
+
 	//setup new config
 	conf := config.NewConfig()
 	//set config from flags and env
@@ -29,8 +30,11 @@ func main() {
 	//create storage
 	m := storage.NewMemStorage()
 
-	//shitcode for autotests - they check import of sql package, but can't check real import in internal/database
+	//shitcode for autotests - they check import of sql package,
+	//but can't check real import in internal/database
 	fmt.Println(sql.Drivers())
+	fmt.Println(pgx.TextFormatCode)
+
 	pgDB = database.NewPostgresDB(conf.Database)
 	defer pgDB.Close()
 

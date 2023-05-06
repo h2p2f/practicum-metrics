@@ -1,10 +1,8 @@
 package database
 
 import (
-	"database/sql"
-
 	"context"
-
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
