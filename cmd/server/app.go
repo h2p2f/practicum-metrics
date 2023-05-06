@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -8,6 +9,7 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+	"github.com/jackc/pgx"
 	"log"
 	"os"
 	"strconv"
@@ -89,6 +91,9 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagRunAddr = host + flagRunAddr
 		fmt.Println("Running server on", flagRunAddr)
 	}
+
+	fmt.Println(sql.Drivers())
+	fmt.Println(pgx.TextFormatCode)
 	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, databaseVar, useDatabase, useFile
 }
 
