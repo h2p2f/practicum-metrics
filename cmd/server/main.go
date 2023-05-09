@@ -1,14 +1,15 @@
 package main
 
+import "database/sql"
+import "github.com/jackc/pgx"
+
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
-	"github.com/jackc/pgx"
 	"log"
 	"net/http"
 	"time"
