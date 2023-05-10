@@ -39,6 +39,8 @@ func main() {
 	pgDB = database.NewPostgresDB(conf.Database)
 	defer pgDB.Close()
 
+	db := database.NewDB(pgDB)
+
 	//create fileDB with path and interval from config
 	fileDB := storage.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
 	if conf.UseDB {
@@ -56,17 +58,6 @@ func main() {
 			fmt.Println(err)
 		}
 		m.RestoreMetrics(metrics)
-		//go func() {
-		//	for {
-		//		time.Sleep(conf.StoreInterval * time.Second)
-		//		met := m.GetAllMetricsSliced()
-		//		fmt.Println(met)
-		//		err := fileDB.SaveToFile(met)
-		//		if err != nil {
-		//			fmt.Println(err)
-		//		}
-		//	}
-		//}()
 	}
 
 	if conf.UseDB {
@@ -76,13 +67,15 @@ func main() {
 		logger.Log.Sugar().Infof("need restore from DB %t", conf.Restore)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		err := pgDB.CreateTable(ctx)
+		err := db.DataBase.CreateTable(ctx)
+		//err := pgDB.CreateTable(ctx)
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error creating DB table: %s", err)
 		}
 
 		if conf.Restore {
-			metrics, err := pgDB.ReadFromDB(ctx)
+			metrics, err := db.DataBase.ReadFromDB(ctx)
+			//metrics, err := pgDB.ReadFromDB(ctx)
 			if err != nil {
 				logger.Log.Sugar().Errorf("Error reading metrics from DB: %s", err)
 			}
@@ -90,21 +83,6 @@ func main() {
 
 		}
 	}
-	//if conf.UseDB {
-	//	go func() {
-	//		for {
-	//			time.Sleep(conf.StoreInterval * time.Second)
-	//			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	//			met := m.GetAllInBytesSliced()
-	//			//fmt.Println(met)
-	//			err := pgDB.SaveToDB(ctx, met)
-	//			if err != nil {
-	//				fmt.Println(err)
-	//			}
-	//			cancel()
-	//		}
-	//	}()
-	//}
 
 	t := time.NewTicker(conf.StoreInterval)
 	defer t.Stop()
@@ -112,9 +90,9 @@ func main() {
 		for {
 			select {
 			case <-t.C:
-				fmt.Println("tick")
+
 				if conf.UseFile {
-					fmt.Println("use file")
+					logger.Log.Sugar().Info("try to save data")
 					met := m.GetAllMetricsSliced()
 					err := fileDB.SaveToFile(met)
 					if err != nil {
@@ -122,10 +100,11 @@ func main() {
 					}
 				}
 				if conf.UseDB {
-					fmt.Println("use DB")
+					logger.Log.Sugar().Info("try to save data")
 					ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 					met := m.GetAllInBytesSliced()
-					err := pgDB.SaveToDB(ctx, met)
+					err := db.DataBase.SaveToDBWithoutTruncate(ctx, met)
+					//err := pgDB.SaveToDBWithoutTruncate(ctx, met)
 					if err != nil {
 						fmt.Println(err)
 					}

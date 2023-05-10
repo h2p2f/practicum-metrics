@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,14 +24,14 @@ type Storager interface {
 	GetAllCounters() map[string]int64
 }
 
-type DataBaser interface {
+type DataBaseHandler interface {
 	PingContext(ctx context.Context) error
 }
 
 // MetricHandler is a handler for metrics
 type MetricHandler struct {
-	Storage Storager
-	DB      DataBaser
+	Storage   Storager
+	DBHandler DataBaseHandler
 }
 
 // metrics is a struct for metrics with json tags
@@ -42,8 +43,8 @@ type metrics struct {
 }
 
 // NewMetricHandler creates a new MetricHandler
-func NewMetricHandler(s Storager, baser DataBaser) *MetricHandler {
-	return &MetricHandler{Storage: s, DB: baser}
+func NewMetricHandler(s Storager, baser DataBaseHandler) *MetricHandler {
+	return &MetricHandler{Storage: s, DBHandler: baser}
 }
 
 // UpdatePage is a handler for metrics (POST requests)
@@ -330,7 +331,7 @@ func (m *MetricHandler) DBPing(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if err := m.DB.PingContext(ctx); err != nil {
+	if err := m.DBHandler.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusOK)
@@ -353,9 +354,16 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
-	if err = json.Unmarshal(buf.Bytes(), &MetricsFromRequest); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
+	dec := json.NewDecoder(&buf)
+	for {
+		var metric metrics
+		if err := dec.Decode(&metric); err == io.EOF {
+			break
+		} else if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		MetricsFromRequest = append(MetricsFromRequest, metric)
 	}
 	for _, metric := range MetricsFromRequest {
 		switch strings.ToLower(metric.MType) {

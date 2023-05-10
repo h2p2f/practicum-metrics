@@ -6,8 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"time"
 )
+
+func init() {
+	if err := logger.InitLogger("info"); err != nil {
+		fmt.Println(err)
+	}
+}
 
 type metrics struct {
 	ID    string   `json:"id"`
@@ -61,6 +68,7 @@ func SendMetrics(met [][]byte, address string) (err error) {
 		if err != nil {
 			return err
 		}
+		logger.Log.Sugar().Info("received response from server: ", resp.StatusCode())
 		fmt.Println("received response from server: ", resp.StatusCode())
 	}
 	return nil
@@ -90,6 +98,6 @@ func SendBatchMetrics(met [][]byte, address string) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Println("received response from server: ", resp.StatusCode())
+	logger.Log.Sugar().Info("received response from server: ", resp.StatusCode())
 	return nil
 }

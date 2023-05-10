@@ -46,7 +46,8 @@ func main() {
 		//get metrics in json format
 		jsonMetrics := m.JSONMetrics()
 		//prepare metrics to send
-		err := httpclient.SendMetrics(jsonMetrics, conf.Address)
+		//err := httpclient.SendMetrics(jsonMetrics, conf.Address)
+		err := httpclient.SendBatchMetrics(jsonMetrics, conf.Address)
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
 		}

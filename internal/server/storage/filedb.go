@@ -4,11 +4,18 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"log"
 	"os"
 	"sync"
 	"time"
 )
+
+func init() {
+	if err := logger.InitLogger("info"); err != nil {
+		fmt.Println(err)
+	}
+}
 
 //TODO: put in order this code
 
