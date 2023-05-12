@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var f *FileDB
+//var f *FileDB
 
 func TestFileDB_ReadFromFile(t *testing.T) {
 	type fields struct {

@@ -54,7 +54,10 @@ func main() {
 		conf.UseFile = false
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		db.DataBase.Create(ctx)
+		err := db.DataBase.Create(ctx)
+		if err != nil {
+			logger.Log.Sugar().Errorf("Error creating DB: %s", err)
+		}
 		//pgDB.Create(ctx)
 		logger.Log.Sugar().Infof("storage is DB %s", conf.Database)
 		if conf.Restore {

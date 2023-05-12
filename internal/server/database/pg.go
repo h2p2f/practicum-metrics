@@ -88,7 +88,13 @@ func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
 		log.Println(err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+	//defer rows.Close()
 	for rows.Next() {
 		var id string
 		err = rows.Scan(&id)
