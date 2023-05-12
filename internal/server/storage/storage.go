@@ -32,6 +32,24 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
+// NewMetricsCounter is a constructor function that returns a new counter struct
+func NewMetricsCounter(ID, MType string, delta int64) *metrics {
+	return &metrics{
+		ID:    ID,
+		MType: MType,
+		Delta: &delta,
+	}
+}
+
+// NewMetricsGauge is a constructor function that returns a new gauge struct
+func NewMetricsGauge(ID, MType string, value float64) *metrics {
+	return &metrics{
+		ID:    ID,
+		MType: MType,
+		Value: &value,
+	}
+}
+
 // SetGauge sets or adds a gauge value
 func (m *MemStorage) SetGauge(name string, value float64) {
 	//m.mut.Lock()
@@ -78,10 +96,10 @@ func (m *MemStorage) GetAllCounters() map[string]int64 {
 // if i put counters value to Metrics struct directly
 // i receive the same pointer for all counters
 // so i implemented via constructor
-func (m *MemStorage) GetAllMetricsSliced() []Metrics {
+func (m *MemStorage) GetAllMetricsSliced() []metrics {
 	//m.mut.Lock()
 	//defer m.mut.Unlock()
-	var metrics []Metrics
+	var metrics []metrics
 	for key, value := range m.GetAllCounters() {
 		met := NewMetricsCounter(key, "counter", value)
 		//met.Delta = &value
@@ -122,7 +140,7 @@ func (m *MemStorage) GetAllInBytesSliced() [][]byte {
 }
 
 // RestoreMetrics restores metrics from slice
-func (m *MemStorage) RestoreMetrics(metrics []Metrics) {
+func (m *MemStorage) RestoreMetrics(metrics []metrics) {
 	//m.mut.Lock()
 	//defer m.mut.Unlock()
 	for _, metric := range metrics {

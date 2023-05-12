@@ -1,6 +1,7 @@
-package storage
+package database
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -8,6 +9,8 @@ import (
 	"testing"
 	"time"
 )
+
+var f *FileDB
 
 func TestFileDB_ReadFromFile(t *testing.T) {
 	type fields struct {
@@ -55,12 +58,15 @@ func TestFileDB_ReadFromFile(t *testing.T) {
 				FilePath: tt.fields.FilePath,
 				Interval: tt.fields.Interval,
 			}
+
+			//f := NewFileDB(tt.fields.FilePath, tt.fields.Interval)
+
 			var err error
 			f.File, err = os.OpenFile(tt.fields.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
-			var want []Metrics
+			var want []dbmetrics
 			for _, line := range tt.wantData {
 				data := []byte(line)
-				metric := Metrics{}
+				metric := dbmetrics{}
 				err = json.Unmarshal(data, &metric)
 				want = append(want, metric)
 			}
@@ -77,13 +83,22 @@ func TestFileDB_ReadFromFile(t *testing.T) {
 			if err := f.File.Close(); err != nil {
 				panic(err)
 			}
-
-			gotMetrics, err := f.ReadFromFile()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			gotMetrics, err := f.Read(ctx)
+			var recieved []dbmetrics
+			for _, line := range gotMetrics {
+				data := []byte(line)
+				metric := dbmetrics{}
+				err = json.Unmarshal(data, &metric)
+				recieved = append(recieved, metric)
+			}
 			if err != nil {
 				t.Errorf("ReadFromFile() error = %v", err)
 			}
 
-			assert.Equalf(t, want, gotMetrics, "ReadFromFile()")
+			assert.Equalf(t, want, recieved, "ReadFromFile()")
+			//assert.Equalf(t, want, gotMetrics, "ReadFromFile()")
 		})
 	}
 }
@@ -94,9 +109,9 @@ func TestFileDB_SaveToFile(t *testing.T) {
 		FilePath string
 		Interval time.Duration
 	}
-	type args struct {
-		metrics []Metrics
-	}
+	//type args struct {
+	//	metrics []Metrics
+	//}
 	tests := []struct {
 		name     string
 		fields   fields
@@ -138,25 +153,37 @@ func TestFileDB_SaveToFile(t *testing.T) {
 				Interval: tt.fields.Interval,
 			}
 			var err error
-			var want []Metrics
+			var want []dbmetrics
 			for _, line := range tt.wantData {
 				data := []byte(line)
-				metric := Metrics{}
+				metric := dbmetrics{}
 				err = json.Unmarshal(data, &metric)
 				if err != nil {
 					log.Fatalf("error while opening file: %s", err)
 				}
 				want = append(want, metric)
 			}
-			err = f.SaveToFile(want)
+			byteMet := convertMetricsToBytes(want)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			err = f.Write(ctx, byteMet)
 			if err != nil {
 				log.Fatalf("error while opening file: %s", err)
 			}
-			gotMetrics, err := f.ReadFromFile()
+			ctx, cancel = context.WithCancel(context.Background())
+			defer cancel()
+			gotMetrics, err := f.Read(ctx)
 			if err != nil {
 				t.Errorf("ReadFromFile() error = %v", err)
 			}
-			assert.Equalf(t, want, gotMetrics, "SaveToFile()")
+			var recieved []dbmetrics
+			for _, line := range gotMetrics {
+				data := []byte(line)
+				metric := dbmetrics{}
+				err = json.Unmarshal(data, &metric)
+				recieved = append(recieved, metric)
+			}
+			assert.Equalf(t, want, recieved, "SaveToFile()")
 		})
 	}
 }

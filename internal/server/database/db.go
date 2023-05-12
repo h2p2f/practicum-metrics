@@ -2,11 +2,12 @@ package database
 
 import "context"
 
+//import _ "github.com/golang/mock/mockgen/model"
+
 type DataBaser interface {
-	CreateTable(ctx context.Context) error
-	ReadFromDB(ctx context.Context) ([][]byte, error)
-	SaveToDB(ctx context.Context, metrics [][]byte) error
-	SaveToDBWithoutTruncate(ctx context.Context, metrics [][]byte) error
+	Read(ctx context.Context) ([][]byte, error)
+	Write(ctx context.Context, metrics [][]byte) error
+	Create(ctx context.Context) error
 }
 
 type metrics struct {
@@ -21,7 +22,5 @@ type DB struct {
 }
 
 func NewDB(db DataBaser) *DB {
-	return &DB{
-		DataBase: db,
-	}
+	return &DB{DataBase: db}
 }

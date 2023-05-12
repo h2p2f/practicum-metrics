@@ -45,7 +45,7 @@ func (pgdb *PGDB) PingContext(ctx context.Context) error {
 	return err
 }
 
-func (pgdb *PGDB) CreateTable(ctx context.Context) (err error) {
+func (pgdb *PGDB) Create(ctx context.Context) (err error) {
 	query := `CREATE TABLE IF NOT EXISTS metrics (
 		    id text not null,
 		    mtype text not null,
@@ -57,7 +57,7 @@ func (pgdb *PGDB) CreateTable(ctx context.Context) (err error) {
 		log.Println(err)
 		return err
 	}
-	logger.Log.Sugar().Info("Table metrics created successfully")
+	logger.Log.Sugar().Info("Table metrics opened successfully")
 	return nil
 }
 
@@ -101,7 +101,31 @@ func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
 	return ids, nil
 }
 
-func (pgdb *PGDB) ReadFromDB(ctx context.Context) ([][]byte, error) {
+func (pgdb *PGDB) GetValueByID(ctx context.Context, req []byte) (res []byte, err error) {
+
+	var met metrics
+	err = json.Unmarshal(req, &met)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	query := `SELECT delta, value FROM metrics WHERE id = $1 AND mtype = $2;`
+	row := pgdb.db.QueryRowContext(ctx, query, met.ID, met.MType)
+	err = row.Scan(&met.Delta, &met.Value)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	res, err = json.Marshal(met)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (pgdb *PGDB) Read(ctx context.Context) ([][]byte, error) {
 	var result [][]byte
 	rows, err := pgdb.db.QueryContext(ctx, "SELECT * FROM metrics;")
 	if err != nil {
@@ -131,44 +155,7 @@ func (pgdb *PGDB) ReadFromDB(ctx context.Context) ([][]byte, error) {
 	return result, nil
 }
 
-func (pgdb *PGDB) SaveToDB(ctx context.Context, met [][]byte) error {
-	logger.Log.Sugar().Info("Saving to DB...")
-	truncQuery := `TRUNCATE TABLE metrics;`
-	_, err := pgdb.db.ExecContext(ctx, truncQuery)
-	if err != nil {
-		logger.Log.Sugar().Errorf("Error truncating table: %v", err)
-		return err
-	}
-
-	for _, metric := range met {
-		var met metrics
-		err = json.Unmarshal(metric, &met)
-		if err != nil {
-			logger.Log.Sugar().Errorf("Error unmarshal data: %v", err)
-			return err
-		}
-		tx, err := pgdb.db.BeginTx(ctx, nil)
-		if err != nil {
-			logger.Log.Sugar().Errorf("Error begin transaction: %v", err)
-		}
-		_, err = tx.ExecContext(ctx,
-			"INSERT INTO metrics (id, mtype, delta, value) VALUES ($1, $2, $3, $4);",
-			met.ID, met.MType, met.Delta, met.Value)
-		if err != nil {
-			logger.Log.Sugar().Errorf("Error inserting data: %v, rollback transaction", err)
-			tx.Rollback()
-			return err
-		}
-		err = tx.Commit()
-		if err != nil {
-			logger.Log.Sugar().Errorf("Error commit transaction: %v", err)
-		}
-	}
-	logger.Log.Sugar().Info("Save to DB successfully")
-	return nil
-}
-
-func (pgdb *PGDB) SaveToDBWithoutTruncate(ctx context.Context, met [][]byte) error {
+func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 	logger.Log.Sugar().Info("Saving to DB without truncate...")
 	for _, metric := range met {
 		var met metrics
