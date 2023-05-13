@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"github.com/h2p2f/practicum-metrics/internal/client/config"
 	"github.com/h2p2f/practicum-metrics/internal/client/httpclient"
 	"github.com/h2p2f/practicum-metrics/internal/client/metrics"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"log"
+	"syscall"
 	"time"
 )
 
@@ -45,11 +47,35 @@ func main() {
 		time.Sleep(conf.ReportInterval * time.Second)
 		//get metrics in json format
 		jsonMetrics := m.JSONMetrics()
+
 		//prepare metrics to send
 		//err := httpclient.SendMetrics(jsonMetrics, conf.Address)
 		err := httpclient.SendBatchMetrics(jsonMetrics, conf.Address)
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
+			if errors.Is(err, syscall.EPIPE) {
+				logger.Log.Sugar().Errorf("Broken pipe, reconnecting...")
+				time.Sleep(1 * time.Second)
+			}
 		}
+		//i := 0
+		//for {
+		//	waitInterval := [3]time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+		//	if i == 3 {
+		//		logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
+		//		break
+		//	}
+		//	err := httpclient.SendBatchMetrics(jsonMetrics, conf.Address)
+		//	if err != nil && errors.Is(err, syscall.EPIPE) {
+		//		logger.Log.Sugar().Errorf("Broken pipe, reconnecting...")
+		//		time.Sleep(waitInterval[i])
+		//		i++
+		//	} else if err != nil {
+		//		logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
+		//		break
+		//	} else {
+		//		break
+		//	}
+		//}
 	}
 }

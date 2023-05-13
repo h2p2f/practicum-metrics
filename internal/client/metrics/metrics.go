@@ -128,29 +128,72 @@ func (m *RuntimeMetrics) URLMetrics(host string) []string {
 	return urls
 }
 
-func (m *RuntimeMetrics) JSONMetrics() [][]byte {
+//func (m *RuntimeMetrics) JSONMetrics() [][]byte {
+//	//lock the mutex
+//	m.mut.Lock()
+//	defer m.mut.Unlock()
+//	//create a slice of urls
+//	var result [][]byte
+//	//generate urls
+//	for metric, value := range m.gauge {
+//		jsonMetric := JSONMetrics{ID: metric, MType: "gauge", Value: &value}
+//		out, err := json.Marshal(jsonMetric)
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		result = append(result, out)
+//	}
+//	for metric, value := range m.counter {
+//		jsonMetric := JSONMetrics{ID: metric, MType: "counter", Delta: &value}
+//		out, err := json.Marshal(jsonMetric)
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		result = append(result, out)
+//	}
+//	m.counter["PollCount"] = 0
+//	return result
+//}
+
+func (m *RuntimeMetrics) JSONMetrics() []byte {
 	//lock the mutex
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	//create a slice of urls
-	var result [][]byte
-	//generate urls
+	//var result []byte
+	////generate urls
+	//for metric, value := range m.gauge {
+	//	jsonMetric := JSONMetrics{ID: metric, MType: "gauge", Value: &value}
+	//	out, err := json.Marshal(jsonMetric)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	result = append(result, out...)
+	//}
+	//for metric, value := range m.counter {
+	//	jsonMetric := JSONMetrics{ID: metric, MType: "counter", Delta: &value}
+	//	out, err := json.Marshal(jsonMetric)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	result = append(result, out...)
+	//}
+	//m.counter["PollCount"] = 0
+	//return result
+
+	var metrics []JSONMetrics
 	for metric, value := range m.gauge {
 		jsonMetric := JSONMetrics{ID: metric, MType: "gauge", Value: &value}
-		out, err := json.Marshal(jsonMetric)
-		if err != nil {
-			log.Fatal(err)
-		}
-		result = append(result, out)
+		metrics = append(metrics, jsonMetric)
 	}
 	for metric, value := range m.counter {
 		jsonMetric := JSONMetrics{ID: metric, MType: "counter", Delta: &value}
-		out, err := json.Marshal(jsonMetric)
-		if err != nil {
-			log.Fatal(err)
-		}
-		result = append(result, out)
+		metrics = append(metrics, jsonMetric)
+	}
+	out, err := json.Marshal(metrics)
+	if err != nil {
+		log.Fatal(err)
 	}
 	m.counter["PollCount"] = 0
-	return result
+	return out
 }

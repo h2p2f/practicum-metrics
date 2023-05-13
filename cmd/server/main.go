@@ -1,8 +1,5 @@
 package main
 
-import "database/sql"
-import "github.com/jackc/pgx"
-
 import (
 	"context"
 	"fmt"
@@ -37,8 +34,8 @@ func main() {
 
 	//shitcode for autotests - they check import of sql package,
 	//but can't check real import in internal/database
-	fmt.Println(sql.Drivers())
-	fmt.Println(pgx.TextFormatCode)
+	//fmt.Println(sql.Drivers())
+	//fmt.Println(pgx.TextFormatCode)
 
 	pgDB := database.NewPostgresDB(conf.Database)
 	defer pgDB.Close()

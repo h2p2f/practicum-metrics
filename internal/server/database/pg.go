@@ -3,6 +3,9 @@ package database
 import (
 	"database/sql"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx"
+	"time"
 )
 
 import (
@@ -135,6 +138,15 @@ func (pgdb *PGDB) Read(ctx context.Context) ([][]byte, error) {
 	var result [][]byte
 	rows, err := pgdb.db.QueryContext(ctx, "SELECT * FROM metrics;")
 	if err != nil {
+		var waitVec [3]time.Duration
+		waitVec[0] = 1 * time.Second
+		waitVec[1] = 3 * time.Second
+		waitVec[2] = 5 * time.Second
+
+		if err, ok := err.(pgx.PgError); ok && err.Code == pgerrcode.UniqueViolation {
+			//log.Println(err)
+			return nil, nil
+		}
 		logger.Log.Sugar().Errorf("Error reading from database: %v", err)
 		return nil, err
 	}

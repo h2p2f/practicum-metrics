@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -357,18 +356,24 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	dec := json.NewDecoder(&buf)
-	for {
-		var metric metrics
-		if err := dec.Decode(&metric); err == io.EOF {
-			break
-		} else if err != nil {
-			fmt.Println(err)
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		MetricsFromRequest = append(MetricsFromRequest, metric)
+	err = json.Unmarshal(buf.Bytes(), &MetricsFromRequest)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
+	//dec := json.NewDecoder(&buf)
+	//for {
+	//	var metric metrics
+	//	if err := dec.Decode(&metric); err == io.EOF {
+	//		break
+	//	} else if err != nil {
+	//		fmt.Println(err)
+	//		http.Error(w, "Bad request", http.StatusBadRequest)
+	//		return
+	//	}
+	//	MetricsFromRequest = append(MetricsFromRequest, metric)
+	//}
 	for _, metric := range MetricsFromRequest {
 		switch strings.ToLower(metric.MType) {
 		case "counter":

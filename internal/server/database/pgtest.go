@@ -90,6 +90,7 @@ func TestPGDB_WriteAndReadFromDB(t *testing.T) {
 			db, err := sql.Open("pgx", tt.db_addr)
 			if err != nil {
 				t.Errorf("can't open db: %v", err)
+
 			}
 			defer db.Close()
 

@@ -74,13 +74,15 @@ func SendMetrics(met [][]byte, address string) (err error) {
 	return nil
 }
 
-func SendBatchMetrics(met [][]byte, address string) (err error) {
+func SendBatchMetrics(met []byte, address string) (err error) {
 	//compress data, this comment wrote captain obvious
-	var dataToSend []byte
-	for _, data := range met {
-		dataToSend = append(dataToSend, data...)
-	}
-	buf, err := Compress(dataToSend)
+	//var dataToSend []byte
+	//for _, data := range met {
+	//	dataToSend = append(dataToSend, data...)
+	//}
+	//fmt.Println("dataToSend: ", dataToSend)
+	//fmt.Println("met: ", met)
+	buf, err := Compress(met)
 	if err != nil {
 		return err
 	}
