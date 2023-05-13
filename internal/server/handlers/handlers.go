@@ -352,7 +352,9 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 	var MetricsFromRequest []metrics
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Bad request", http.StatusBadRequest)
+
 		return
 	}
 	dec := json.NewDecoder(&buf)
@@ -361,6 +363,7 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 		if err := dec.Decode(&metric); err == io.EOF {
 			break
 		} else if err != nil {
+			fmt.Println(err)
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
@@ -371,6 +374,7 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 		case "counter":
 			{
 				if *metric.Delta < 0 {
+					fmt.Println("delta < 0")
 					http.Error(w, "Bad request", http.StatusBadRequest)
 					return
 				}
@@ -381,6 +385,7 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 		case "gauge":
 			{
 				if *metric.Value < 0 {
+					fmt.Println("value < 0")
 					http.Error(w, "Bad request", http.StatusBadRequest)
 					return
 				}
