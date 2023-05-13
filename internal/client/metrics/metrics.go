@@ -56,7 +56,11 @@ func (m *RuntimeMetrics) NewMetrics() {
 		"StackSys",
 		"Sys",
 		"TotalAlloc",
-		"RandomValue"}
+		"RandomValue",
+		"TotalMemory",
+		"FreeMemory",
+		"CPUutilization1",
+	}
 
 	counterMetrics := []string{"PollCount"}
 	//initialize metrics
@@ -104,6 +108,9 @@ func (m *RuntimeMetrics) Monitor() {
 	m.gauge["StackSys"] = float64(RtMetrics.StackSys)
 	m.gauge["Sys"] = float64(RtMetrics.Sys)
 	m.gauge["TotalAlloc"] = float64(RtMetrics.TotalAlloc)
+	m.gauge["TotalMemory"] = float64(RtMetrics.BySize[0].Size)
+	m.gauge["FreeMemory"] = float64(RtMetrics.BySize[0].Frees)
+	m.gauge["CPUutilization1"] = float64(RtMetrics.GCCPUFraction)
 	m.counter["PollCount"]++
 	m.gauge["RandomValue"] = rand.Float64() * 10000
 }
