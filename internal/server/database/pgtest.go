@@ -39,19 +39,19 @@ func convertBytesToMetrics(data []byte) dbmetrics {
 	}
 	return metrics
 }
-func TestPGDB_WriteAndReadFromDB(t *testing.T) {
+func TestPGDBWriteAndReadFromDB(t *testing.T) {
 	type fields struct {
 		db *sql.DB
 	}
 	tests := []struct {
-		db_addr string
+		dbAddr  string
 		name    string
 		fields  []dbmetrics
 		wantErr bool
 	}{
 		{
-			db_addr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-			name:    "positive test1",
+			dbAddr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+			name:   "positive test1",
 			fields: []dbmetrics{
 				{
 					ID:    "test1",
@@ -61,8 +61,8 @@ func TestPGDB_WriteAndReadFromDB(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			db_addr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-			name:    "positive test2",
+			dbAddr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+			name:   "positive test2",
 			fields: []dbmetrics{
 				{
 					ID:    "test2",
@@ -73,8 +73,8 @@ func TestPGDB_WriteAndReadFromDB(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			db_addr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-			name:    "negative test1",
+			dbAddr: "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+			name:   "negative test1",
 			fields: []dbmetrics{
 				{
 					ID:    "test3",
@@ -87,7 +87,7 @@ func TestPGDB_WriteAndReadFromDB(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db, err := sql.Open("pgx", tt.db_addr)
+			db, err := sql.Open("pgx", tt.dbAddr)
 			if err != nil {
 				t.Errorf("can't open db: %v", err)
 				return

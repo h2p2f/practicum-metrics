@@ -181,6 +181,9 @@ func TestFileDB_SaveToFile(t *testing.T) {
 				data := []byte(line)
 				metric := dbmetrics{}
 				err = json.Unmarshal(data, &metric)
+				if err != nil {
+					t.Errorf("unmarshal error = %v", err)
+				}
 				recieved = append(recieved, metric)
 			}
 			assert.Equalf(t, want, recieved, "SaveToFile()")

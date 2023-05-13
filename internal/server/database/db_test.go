@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"github.com/golang/mock/gomock"
 	"github.com/h2p2f/practicum-metrics/internal/server/mocks"
 	"testing"
@@ -29,8 +30,9 @@ func TestWrite(t *testing.T) {
 		}
 		for _, tt := range tests {
 			var arg [][]byte
+			ctx := context.TODO()
 			arg = append(arg, []byte(tt.wString))
-			err := m.Write(nil, arg)
+			err := m.Write(ctx, arg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Error: %v", err)
 			}
@@ -60,7 +62,8 @@ func TestRead(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			got, err := m.Read(nil)
+			ctx := context.TODO()
+			got, err := m.Read(ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Error: %v", err)
 			}
