@@ -3,7 +3,6 @@ package httpclient
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
@@ -36,18 +35,7 @@ func Compress(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func CompressMet(data []metrics) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	gz := gzip.NewWriter(buf)
-	if err := json.NewEncoder(gz).Encode(data); err != nil {
-		return nil, err
-	}
-	if err := gz.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
+// this function is unused now
 func SendMetrics(met [][]byte, address string) (err error) {
 	for _, data := range met {
 		//compress data, this comment wrote captain obvious
@@ -58,7 +46,7 @@ func SendMetrics(met [][]byte, address string) (err error) {
 		//send data to server
 		client := resty.New()
 		//some autotests can be faster than server starts, so we need to retry three times, not more :)
-		client.SetRetryCount(3).SetRetryWaitTime(200 * time.Millisecond)
+		client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second)
 		//upgrading request's headers
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
@@ -75,13 +63,7 @@ func SendMetrics(met [][]byte, address string) (err error) {
 }
 
 func SendBatchMetrics(met []byte, address string) (err error) {
-	//compress data, this comment wrote captain obvious
-	//var dataToSend []byte
-	//for _, data := range met {
-	//	dataToSend = append(dataToSend, data...)
-	//}
-	//fmt.Println("dataToSend: ", dataToSend)
-	//fmt.Println("met: ", met)
+	//compress data
 	buf, err := Compress(met)
 	if err != nil {
 		return err

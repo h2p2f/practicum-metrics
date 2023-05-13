@@ -2,9 +2,11 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 )
 
@@ -30,7 +32,18 @@ type PGDB struct {
 func NewPostgresDB(param string) *PGDB {
 	db, err := sql.Open("pgx", param)
 	if err != nil {
-		logger.Log.Sugar().Errorf("Error opening database connection: %v", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
+			logger.Log.Sugar().Errorf("Error opening database connection: %v, trying reconnect", err)
+			waitTime := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+			for _, v := range waitTime {
+				time.Sleep(v)
+				db, err = sql.Open("pgx", param)
+				if err == nil {
+					break
+				}
+			}
+		}
 	}
 	return &PGDB{db: db}
 }
@@ -91,13 +104,17 @@ func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
 		log.Println(err)
 		return nil, err
 	}
+	if rows.Err() != nil {
+		log.Println(err)
+		return nil, err
+	}
 	defer func() {
 		err := rows.Close()
 		if err != nil {
 			log.Println(err)
 		}
 	}()
-	//defer rows.Close()
+
 	for rows.Next() {
 		var id string
 		err = rows.Scan(&id)
@@ -183,7 +200,13 @@ func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 			return err
 		}
 		ids, err := pgdb.GetAllID(ctx)
+		if err != nil {
+			return err
+		}
 		tx, err := pgdb.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
 
 		if contains(ids, met.ID) {
 
