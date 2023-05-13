@@ -248,7 +248,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Not implemented", http.StatusNotImplemented)
 		}
 	}
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 	//prepare response
 	response, _ := json.Marshal(MetricFromRequest)
 	w.Header().Add("Content-Type", "application/json")
