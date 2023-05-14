@@ -12,12 +12,6 @@ import (
 	"time"
 )
 
-//var pgDB *database.PGDB
-
-//var db *database.DB
-
-//var fileDB *database.FileDB
-
 func main() {
 	//init logger
 	if err := logger.InitLogger("info"); err != nil {
@@ -83,26 +77,23 @@ func main() {
 	t := time.NewTicker(conf.StoreInterval)
 	defer t.Stop()
 	go func() {
-		for {
-			select {
-			case <-t.C:
-				logger.Log.Sugar().Info("try to save data")
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-				met := m.GetAllInBytesSliced()
-				if conf.UseDB {
-					err := db.DataBase.Write(ctx, met)
-					if err != nil {
-						logger.Log.Sugar().Errorf("Error writing metrics to DB: %s", err)
-					}
+		for range t.C {
+			logger.Log.Sugar().Info("try to save data")
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			met := m.GetAllInBytesSliced()
+			if conf.UseDB {
+				err := db.DataBase.Write(ctx, met)
+				if err != nil {
+					logger.Log.Sugar().Errorf("Error writing metrics to DB: %s", err)
 				}
-				if conf.UseFile {
-					err := file.DataBase.Write(ctx, met)
-					if err != nil {
-						logger.Log.Sugar().Errorf("Error writing metrics to file: %s", err)
-					}
-				}
-				cancel()
 			}
+			if conf.UseFile {
+				err := file.DataBase.Write(ctx, met)
+				if err != nil {
+					logger.Log.Sugar().Errorf("Error writing metrics to file: %s", err)
+				}
+			}
+			cancel()
 		}
 	}()
 
