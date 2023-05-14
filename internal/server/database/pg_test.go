@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -86,11 +87,13 @@ func TestPGDBWriteAndReadFromDB(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		if os.Getenv("GITHUB_JOB") == "metricstest" {
+			t.Skip("Skipping DB tests")
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			db, err := sql.Open("pgx", tt.dbAddr)
 			if err != nil {
-				t.Skipf("can't open db: %v", err)
-				//t.Errorf("can't open db: %v", err)
+				log.Fatal(err)
 				return
 			}
 			defer func() {
