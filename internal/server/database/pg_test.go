@@ -40,9 +40,9 @@ func convertBytesToMetrics(data []byte) dbmetrics {
 	return metrics
 }
 func TestPGDBWriteAndReadFromDB(t *testing.T) {
-	type fields struct {
-		db *sql.DB
-	}
+	//type fields struct {
+	//	db *sql.DB
+	//}
 	tests := []struct {
 		dbAddr  string
 		name    string
@@ -89,10 +89,16 @@ func TestPGDBWriteAndReadFromDB(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			db, err := sql.Open("pgx", tt.dbAddr)
 			if err != nil {
-				t.Errorf("can't open db: %v", err)
+				t.Skipf("can't open db: %v", err)
+				//t.Errorf("can't open db: %v", err)
 				return
 			}
-			defer db.Close()
+			defer func() {
+				if err := db.Close(); err != nil {
+					t.Errorf("can't close db: %v", err)
+				}
+			}()
+			//defer db.Close()
 
 			pg := &PGDB{
 				db: db,
