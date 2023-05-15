@@ -20,6 +20,7 @@ func isNumeric(s string) bool {
 	return true
 }
 
+// GetFlagAndEnvClient is a function that returns flag and env variables
 func GetFlagAndEnvClient() (string, time.Duration, time.Duration) {
 	var flagRunPort string
 	var reportInterval time.Duration

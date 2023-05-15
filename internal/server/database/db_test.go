@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// this is a meaningless test since functions either do not return
+// a result or have no input parameters other than the context
 func TestWrite(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

@@ -11,13 +11,12 @@ import (
 	"time"
 )
 
+// init logger
 func init() {
 	if err := logger.InitLogger("info"); err != nil {
 		fmt.Println(err)
 	}
 }
-
-//TODO: put in order this code
 
 // FileDB is a struct that contains file path and interval to store metrics, mutex, file
 type FileDB struct {
@@ -34,10 +33,13 @@ func NewFileDB(filePath string, interval time.Duration) *FileDB {
 		Interval: interval,
 	}
 }
+
+// Create it is a stub function to implement the interface
 func (f *FileDB) Create(ctx context.Context) error {
 	return nil
 }
 
+// Write is a function that writes metrics to file
 func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	var err error
 	f.File, err = os.OpenFile(f.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
@@ -59,6 +61,7 @@ func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	return nil
 }
 
+// Read is a function that reads metrics from file
 func (f *FileDB) Read(ctx context.Context) ([][]byte, error) {
 	var err error
 	_, err = os.Stat(f.FilePath)

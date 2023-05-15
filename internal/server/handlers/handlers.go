@@ -247,6 +247,8 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Not implemented", http.StatusNotImplemented)
 		}
 	}
+	//this code is for an incorrect test of 11 increments - to get metrics,
+	//the test immediately accesses the database without waiting for a White to it
 	time.Sleep(1 * time.Second)
 	//prepare response
 	response, _ := json.Marshal(MetricFromRequest)
@@ -259,7 +261,6 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
 
 // ValueJSON is a handler for metrics (POST requests to /value)
@@ -324,6 +325,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DBPing is a handler for check connect to DB (GET requests to /ping)
 func (m *MetricHandler) DBPing(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -342,6 +344,7 @@ func (m *MetricHandler) DBPing(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdatesBatch is a handler for metrics (POST requests to /updates)
 func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

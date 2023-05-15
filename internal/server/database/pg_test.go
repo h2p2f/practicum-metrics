@@ -101,7 +101,6 @@ func TestPGDBWriteAndReadFromDB(t *testing.T) {
 					t.Errorf("can't close db: %v", err)
 				}
 			}()
-			//defer db.Close()
 
 			pg := &PGDB{
 				db: db,

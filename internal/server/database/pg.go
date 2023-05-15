@@ -1,29 +1,28 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"time"
+
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgconn"
-	"time"
-)
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"log"
 )
 
+// init: initialize logger
 func init() {
 	if err := logger.InitLogger("info"); err != nil {
 		fmt.Println(err)
 	}
 }
 
+// PGDB: create struct for DB
 type PGDB struct {
 	db *sql.DB
 }
@@ -32,14 +31,19 @@ type PGDB struct {
 func NewPostgresDB(param string) *PGDB {
 	db, err := sql.Open("pgx", param)
 	if err != nil {
+		// If the error is a connection exception, try to reconnect
+		//this code wrote for increment #13
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
 			logger.Log.Sugar().Errorf("Error opening database connection: %v, trying reconnect", err)
+			//time delta for reconnect is 1, 3, 5 seconds
 			waitTime := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+			//try to reconnect
 			for _, v := range waitTime {
 				time.Sleep(v)
 				db, err = sql.Open("pgx", param)
 				if err == nil {
+					//if connection is successful, break the loop
 					break
 				}
 			}
@@ -56,11 +60,15 @@ func (pgdb *PGDB) Close() {
 	}
 }
 
+// PingContext is a function that checks the connection to the database
+// used in http handlers
+// realization for increment #11
 func (pgdb *PGDB) PingContext(ctx context.Context) error {
 	err := pgdb.db.PingContext(ctx)
 	return err
 }
 
+// Create is a function that creates a table in the database
 func (pgdb *PGDB) Create(ctx context.Context) (err error) {
 	query := `CREATE TABLE IF NOT EXISTS metrics (
 		    id text not null,
@@ -77,6 +85,8 @@ func (pgdb *PGDB) Create(ctx context.Context) (err error) {
 	return nil
 }
 
+// InsertMetric is a function that inserts a metric into the database
+// used in write func
 func (pgdb *PGDB) InsertMetric(ctx context.Context, id string, mtype string, delta *int64, value *float64) (err error) {
 	query := `INSERT INTO metrics (id, mtype, delta, value) VALUES ($1, $2, $3, $4);`
 	_, err = pgdb.db.ExecContext(ctx, query, id, mtype, delta, value)
@@ -87,6 +97,8 @@ func (pgdb *PGDB) InsertMetric(ctx context.Context, id string, mtype string, del
 	return nil
 }
 
+// UpdateMetric is a function that updates a metric in the database
+// used in write func
 func (pgdb *PGDB) UpdateMetric(ctx context.Context, id string, mtype string, delta *int64, value *float64) (err error) {
 	query := `UPDATE metrics SET delta = $1, value = $2 WHERE id = $3 AND mtype = $4;`
 	_, err = pgdb.db.ExecContext(ctx, query, delta, value, id, mtype)
@@ -97,6 +109,8 @@ func (pgdb *PGDB) UpdateMetric(ctx context.Context, id string, mtype string, del
 	return nil
 }
 
+// GetAllID is a function that returns all id from the database
+// used in write func
 func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
 	query := `SELECT id FROM metrics;`
 	rows, err := pgdb.db.QueryContext(ctx, query)
@@ -127,6 +141,8 @@ func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
 	return ids, nil
 }
 
+// GetValuesByID is a function that returns value by id from the database
+// used in autotests
 func (pgdb *PGDB) GetValueByID(ctx context.Context, req []byte) (res []byte, err error) {
 
 	var met metrics
@@ -147,29 +163,20 @@ func (pgdb *PGDB) GetValueByID(ctx context.Context, req []byte) (res []byte, err
 		log.Println(err)
 		return nil, err
 	}
-
 	return res, nil
 }
 
+// Read is a function that reads all metrics from the database
+// used in main module through interface
 func (pgdb *PGDB) Read(ctx context.Context) ([][]byte, error) {
 	var result [][]byte
 	rows, err := pgdb.db.QueryContext(ctx, "SELECT * FROM metrics;")
 	if err != nil {
-		var waitVec [3]time.Duration
-		waitVec[0] = 1 * time.Second
-		waitVec[1] = 3 * time.Second
-		waitVec[2] = 5 * time.Second
-
-		if err, ok := err.(pgx.PgError); ok && err.Code == pgerrcode.UniqueViolation {
-			//log.Println(err)
-			return nil, nil
-		}
 		logger.Log.Sugar().Errorf("Error reading from database: %v", err)
 		return nil, err
 	}
 	if rows.Err() != nil {
 		logger.Log.Sugar().Errorf("Error reading from database: %v", err)
-		//log.Println(err)
 		return nil, err
 	}
 	var met metrics
@@ -190,8 +197,10 @@ func (pgdb *PGDB) Read(ctx context.Context) ([][]byte, error) {
 	return result, nil
 }
 
+// Write is a function that writes metrics to the database
+// used in main module through interface
 func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
-	logger.Log.Sugar().Info("Saving to DB without truncate...")
+	logger.Log.Sugar().Info("Saving to DB...")
 	for _, metric := range met {
 		var met metrics
 		err := json.Unmarshal(metric, &met)
@@ -199,17 +208,31 @@ func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 			logger.Log.Sugar().Errorf("Error unmarshal data: %v", err)
 			return err
 		}
+		//some disclaimer: it would be possible to use (on conflict) in query, but it is necessary to check for
+		//the presence of not only the ID field, but a set of ID, Mtype, and MType is not a unique field.
+		//Also, UniqueViolation error handling does not guarantee handling of all possible
+		//data update errors in the database. Therefore, I did it through a request for all IDs and checking
+		//if the arrived metrics are already in the database. Based on this, I choose the method - insert or update.
+
+		//I think that my first implementation with truncate table before writing to it is
+		//the most elegant and short, but not suitable for further learning tasks :))
+
+		//a good idea for autotest writers from Y.Practicum is
+		//to make two metrics with the same name and different Mtype :)
+
 		ids, err := pgdb.GetAllID(ctx)
 		if err != nil {
 			return err
 		}
+		//begin transaction
+		//I use small atomic transactions to avoid deadlocks in the future
 		tx, err := pgdb.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err
 		}
-
+		//check if id exists in database
 		if contains(ids, met.ID) {
-
+			//if id exists, update data
 			err = pgdb.UpdateMetric(ctx, met.ID, met.MType, met.Delta, met.Value)
 			if err != nil {
 				logger.Log.Sugar().Errorf("Error updating data: %v, rollback transaction", err)
@@ -221,7 +244,7 @@ func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 			}
 
 		} else {
-
+			//if id doesn't exist, insert data
 			err = pgdb.InsertMetric(ctx, met.ID, met.MType, met.Delta, met.Value)
 			if err != nil {
 				logger.Log.Sugar().Errorf("Error inserting data: %v, rollback transaction", err)
@@ -243,6 +266,7 @@ func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 	return nil
 }
 
+// Contains is a function that checks if the id is in the slice
 func contains(ids []string, id string) bool {
 	for _, i := range ids {
 		if i == id {

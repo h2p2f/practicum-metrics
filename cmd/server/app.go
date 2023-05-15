@@ -4,17 +4,18 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"time"
+	"unicode"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/handlers"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
 	"github.com/jackc/pgx"
-	"log"
-	"os"
-	"strconv"
-	"time"
-	"unicode"
 )
 
 // getFlagsAndEnv is a function that returns flags and env variables
@@ -24,11 +25,10 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		flagStoreInterval time.Duration
 		flagStorePath     string
 		flagRestore       bool
-		//interval          int
-		IntervalDuration time.Duration
-		databaseVar      string
-		useDatabase      bool
-		useFile          bool
+		IntervalDuration  time.Duration
+		databaseVar       string
+		useDatabase       bool
+		useFile           bool
 	)
 	useFile = false
 	useDatabase = false
@@ -43,12 +43,8 @@ func getFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
 		"databaseVar to store metrics")
 
-	//postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable
-	//host=localhost user=practicum password=yandex dbname=postgres sslmode=disable
 	flag.Parse()
-	// convert int to duration
-	//flagStoreInterval = time.Duration(interval) * time.Second
-	// get env variables, if they exist drop flags
+
 	flagStoreInterval = IntervalDuration
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunAddr = envAddress
@@ -127,6 +123,8 @@ func MetricRouter(m *storage.MemStorage, db *database.PGDB) chi.Router {
 	//
 	return r
 }
+
+// isFlagPassed is a function that checks if flag was passed
 func isFlagPassed(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {

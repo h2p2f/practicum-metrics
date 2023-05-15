@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage"
-	"log"
-	"net/http"
-	"time"
 )
 
 func main() {
@@ -25,12 +26,7 @@ func main() {
 
 	//create storage
 	m := storage.NewMemStorage()
-
-	//shitcode for autotests - they check import of sql package,
-	//but can't check real import in internal/database
-	//fmt.Println(sql.Drivers())
-	//fmt.Println(pgx.TextFormatCode)
-
+	//create database and file storage
 	pgDB := database.NewPostgresDB(conf.Database)
 	defer pgDB.Close()
 	fileDB := database.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
@@ -40,7 +36,7 @@ func main() {
 
 	//db := database.NewDB(pgDB, file)
 	logger.Log.Sugar().Infof("need restore from storage %t", conf.Restore)
-
+	//Create DB if not exist, restore metrics if it needs
 	if conf.UseDB {
 		conf.UseFile = false
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -49,7 +45,6 @@ func main() {
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error creating DB: %s", err)
 		}
-		//pgDB.Create(ctx)
 		logger.Log.Sugar().Infof("storage is DB %s", conf.Database)
 		if conf.Restore {
 			metrics, err := db.DataBase.Read(ctx)
@@ -58,7 +53,7 @@ func main() {
 			}
 			m.RestoreMetric(metrics)
 		}
-
+		//if it needs use and restore from file
 	} else if conf.UseFile {
 		logger.Log.Sugar().Infof("storage is file %s", conf.PathToStoreFile)
 		if conf.Restore {
@@ -72,7 +67,7 @@ func main() {
 			m.RestoreMetric(metrics)
 		}
 	}
-
+	//periodically write to storage
 	logger.Log.Sugar().Infof("write to storage interval %s", conf.StoreInterval)
 	t := time.NewTicker(conf.StoreInterval)
 	defer t.Stop()
@@ -100,7 +95,6 @@ func main() {
 	//start server with router
 	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
 
-	//logger.Log.Sugar().Infof("startup params - useDB %t useFile %t, Restore %t", conf.UseDB, conf.UseFile, conf.Restore)
 	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
 
 }
