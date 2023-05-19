@@ -3,6 +3,8 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"log"
 	"math/rand"
 	"runtime"
@@ -76,6 +78,14 @@ func (m *RuntimeMetrics) NewMetrics() {
 func (m *RuntimeMetrics) Monitor() {
 	//set up runtime metrics
 	var RtMetrics runtime.MemStats
+	memory, err := mem.VirtualMemory()
+	if err != nil {
+		log.Println(err)
+	}
+	cp, err := cpu.Percent(0, false)
+	if err != nil {
+		log.Println(err)
+	}
 	//get runtime metrics
 	runtime.ReadMemStats(&RtMetrics)
 	//lock the mutex, update the metrics and unlock the mutex
@@ -108,9 +118,9 @@ func (m *RuntimeMetrics) Monitor() {
 	*m.gauge["StackSys"] = float64(RtMetrics.StackSys)
 	*m.gauge["Sys"] = float64(RtMetrics.Sys)
 	*m.gauge["TotalAlloc"] = float64(RtMetrics.TotalAlloc)
-	*m.gauge["TotalMemory"] = float64(RtMetrics.BySize[0].Size)
-	*m.gauge["FreeMemory"] = float64(RtMetrics.BySize[0].Frees)
-	*m.gauge["CPUutilization1"] = float64(RtMetrics.GCCPUFraction)
+	*m.gauge["TotalMemory"] = float64(memory.Total)
+	*m.gauge["FreeMemory"] = float64(memory.Free)
+	*m.gauge["CPUutilization1"] = cp[0]
 	m.counter["PollCount"]++
 	*m.gauge["RandomValue"] = rand.Float64() * 10000
 }
