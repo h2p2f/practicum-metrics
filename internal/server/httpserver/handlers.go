@@ -1,4 +1,4 @@
-package handlers
+package httpserver
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Storager is an interface for storage
+// Storager is an interface for model
 type Storager interface {
 	SetGauge(name string, value float64)
 	SetCounter(name string, value int64)

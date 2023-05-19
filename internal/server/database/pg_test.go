@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"testing"
@@ -101,9 +102,10 @@ func TestPGDBWriteAndReadFromDB(t *testing.T) {
 					t.Errorf("can't close db: %v", err)
 				}
 			}()
-
+			logger := zap.NewExample()
 			pg := &PGDB{
-				db: db,
+				db:     db,
+				logger: logger,
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()

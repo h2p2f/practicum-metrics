@@ -3,20 +3,11 @@ package database
 import (
 	"bufio"
 	"context"
-	"fmt"
-	"github.com/h2p2f/practicum-metrics/internal/logger"
-	"log"
+	"go.uber.org/zap"
 	"os"
 	"sync"
 	"time"
 )
-
-// init logger
-func init() {
-	if err := logger.InitLogger("info"); err != nil {
-		fmt.Println(err)
-	}
-}
 
 // FileDB is a struct that contains file path and interval to store metrics, mutex, file
 type FileDB struct {
@@ -24,13 +15,15 @@ type FileDB struct {
 	FilePath string
 	Interval time.Duration
 	mut      sync.RWMutex
+	logger   *zap.Logger
 }
 
 // NewFileDB is a function that returns a new fileDB
-func NewFileDB(filePath string, interval time.Duration) *FileDB {
+func NewFileDB(filePath string, interval time.Duration, logger *zap.Logger) *FileDB {
 	return &FileDB{
 		FilePath: filePath,
 		Interval: interval,
+		logger:   logger,
 	}
 }
 
@@ -45,7 +38,7 @@ func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	f.File, err = os.OpenFile(f.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	defer func() {
 		if err := f.File.Close(); err != nil {
-			logger.Log.Sugar().Fatalf("error while closing file on write: %s", err)
+			f.logger.Sugar().Fatalf("error while closing file on write: %s", err)
 		}
 	}()
 	if err != nil {
@@ -57,7 +50,7 @@ func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 			return err
 		}
 	}
-	logger.Log.Sugar().Infof("saved to file - success")
+	f.logger.Sugar().Infof("saved to file - success")
 	return nil
 }
 
@@ -71,7 +64,7 @@ func (f *FileDB) Read(ctx context.Context) ([][]byte, error) {
 	f.File, err = os.OpenFile(f.FilePath, os.O_RDONLY, 0755)
 	defer func() {
 		if err := f.File.Close(); err != nil {
-			log.Fatalf("error while closing file on read: %s", err)
+			f.logger.Sugar().Errorf("error while closing file on read: %s", err)
 		}
 	}()
 	if err != nil {
@@ -85,6 +78,6 @@ func (f *FileDB) Read(ctx context.Context) ([][]byte, error) {
 		}
 		metrics = append(metrics, scan.Bytes())
 	}
-	logger.Log.Sugar().Infof("read from file - success")
+	f.logger.Sugar().Infof("read from file - success")
 	return metrics, nil
 }

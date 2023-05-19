@@ -1,10 +1,10 @@
-package handlers
+package httpserver
 
 import (
 	"bytes"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
-	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+	"github.com/h2p2f/practicum-metrics/internal/server/model"
 	"math/rand"
 	"net/http/httptest"
 	"strings"
@@ -89,7 +89,7 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/update/"+tt.metric+"/"+tt.metricName+"/"+tt.metricValue, nil)
 			r := chi.NewRouter()
-			testStorage := storage.NewMemStorage()
+			testStorage := model.NewMemStorage()
 			handler := NewMetricHandler(testStorage, nil)
 			r.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 			w := httptest.NewRecorder()
@@ -173,7 +173,7 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			reqPost := httptest.NewRequest("POST", "/update/"+tt.metric+"/"+tt.metricName+"/"+tt.metricValue, nil)
 			reqGet := httptest.NewRequest("GET", "/value/"+tt.metric+"/"+tt.metricName, nil)
 			r := chi.NewRouter()
-			testStorage := storage.NewMemStorage()
+			testStorage := model.NewMemStorage()
 			handler := NewMetricHandler(testStorage, nil)
 			r.Get("/value/{metric}/{key}", handler.GetMetricValue)
 			r.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
@@ -235,7 +235,7 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 			},
 		},
 	}
-	testStorage := storage.NewMemStorage()
+	testStorage := model.NewMemStorage()
 	handler := NewMetricHandler(testStorage, nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -279,7 +279,7 @@ func TestMetricHandler_MainPage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/", nil)
 			r := chi.NewRouter()
-			testStorage := storage.NewMemStorage()
+			testStorage := model.NewMemStorage()
 			handler := NewMetricHandler(testStorage, nil)
 			r.Get("/", handler.MainPage)
 			w := httptest.NewRecorder()
@@ -361,7 +361,7 @@ func TestMetricHandler_UpdateAndValueJSON(t *testing.T) {
 			},
 		},
 	}
-	testStorage := storage.NewMemStorage()
+	testStorage := model.NewMemStorage()
 	handler := NewMetricHandler(testStorage, nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

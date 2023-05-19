@@ -1,4 +1,4 @@
-package storage
+package model
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// MemStorage is a storage in memory
+// MemStorage is a model in memory
 // it is a struct with two maps - gauges and counters
 
 type MemStorage struct {

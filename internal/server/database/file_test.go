@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"testing"
@@ -17,6 +18,7 @@ func TestFileDB_ReadFromFile(t *testing.T) {
 		File     *os.File
 		FilePath string
 		Interval time.Duration
+		logger   *zap.Logger
 	}
 	tests := []struct {
 		name     string
@@ -52,11 +54,13 @@ func TestFileDB_ReadFromFile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		logger := zap.NewExample()
 		t.Run(tt.name, func(t *testing.T) {
 			f := &FileDB{
 				File:     tt.fields.File,
 				FilePath: tt.fields.FilePath,
 				Interval: tt.fields.Interval,
+				logger:   logger,
 			}
 
 			//f := NewFileDB(tt.fields.FilePath, tt.fields.Interval)
@@ -108,6 +112,7 @@ func TestFileDB_SaveToFile(t *testing.T) {
 		File     *os.File
 		FilePath string
 		Interval time.Duration
+		logger   *zap.Logger
 	}
 	//type args struct {
 	//	metrics []Metrics
@@ -147,10 +152,12 @@ func TestFileDB_SaveToFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			logger := zap.NewExample()
 			f := &FileDB{
 				File:     tt.fields.File,
 				FilePath: tt.fields.FilePath,
 				Interval: tt.fields.Interval,
+				logger:   logger,
 			}
 			var err error
 			var want []dbmetrics

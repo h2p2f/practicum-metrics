@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
 	"net/http"
 	"time"
 
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/database"
-	"github.com/h2p2f/practicum-metrics/internal/server/storage"
+	"github.com/h2p2f/practicum-metrics/internal/server/model"
 )
 
 func main() {
@@ -22,20 +22,20 @@ func main() {
 	//setup new config
 	conf := config.NewConfig()
 	//set config from flags and env
-	conf.SetConfig(getFlagsAndEnv())
+	conf.SetConfig(config.GetFlagsAndEnv())
 
-	//create storage
-	m := storage.NewMemStorage()
-	//create database and file storage
-	pgDB := database.NewPostgresDB(conf.Database)
+	//create model
+	m := model.NewMemStorage()
+	//create database and file model
+	pgDB := database.NewPostgresDB(conf.Database, logger.Log)
 	defer pgDB.Close()
-	fileDB := database.NewFileDB(conf.PathToStoreFile, conf.StoreInterval)
+	fileDB := database.NewFileDB(conf.PathToStoreFile, conf.StoreInterval, logger.Log)
 
 	db := database.NewDB(pgDB)
 	file := database.NewDB(fileDB)
 
 	//db := database.NewDB(pgDB, file)
-	logger.Log.Sugar().Infof("need restore from storage %t", conf.Restore)
+	logger.Log.Sugar().Infof("need restore from model %t", conf.Restore)
 	//Create DB if not exist, restore metrics if it needs
 	if conf.UseDB {
 		conf.UseFile = false
@@ -45,7 +45,7 @@ func main() {
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error creating DB: %s", err)
 		}
-		logger.Log.Sugar().Infof("storage is DB %s", conf.Database)
+		logger.Log.Sugar().Infof("model is DB %s", conf.Database)
 		if conf.Restore {
 			metrics, err := db.DataBase.Read(ctx)
 			if err != nil {
@@ -55,7 +55,7 @@ func main() {
 		}
 		//if it needs use and restore from file
 	} else if conf.UseFile {
-		logger.Log.Sugar().Infof("storage is file %s", conf.PathToStoreFile)
+		logger.Log.Sugar().Infof("model is file %s", conf.PathToStoreFile)
 		if conf.Restore {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
@@ -67,8 +67,8 @@ func main() {
 			m.RestoreMetric(metrics)
 		}
 	}
-	//periodically write to storage
-	logger.Log.Sugar().Infof("write to storage interval %s", conf.StoreInterval)
+	//periodically write to model
+	logger.Log.Sugar().Infof("write to model interval %s", conf.StoreInterval)
 	t := time.NewTicker(conf.StoreInterval)
 	defer t.Stop()
 	go func() {
@@ -94,7 +94,6 @@ func main() {
 
 	//start server with router
 	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
-
-	log.Fatal(http.ListenAndServe(conf.ServerAddress, MetricRouter(m, pgDB)))
+	logger.Log.Sugar().Fatalf("Server stopped with error: %s", http.ListenAndServe(conf.ServerAddress, httpserver.MetricRouter(m, pgDB)))
 
 }

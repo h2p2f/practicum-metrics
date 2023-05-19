@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Log is handlers logger
+// Log is httpserver logger
 var Log *zap.Logger = zap.NewNop()
 
 // responseData is struct for logging response data
