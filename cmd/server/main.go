@@ -94,6 +94,6 @@ func main() {
 
 	//start server with router
 	logger.Log.Sugar().Infof("Server started on %s", conf.ServerAddress)
-	logger.Log.Sugar().Fatalf("Server stopped with error: %s", http.ListenAndServe(conf.ServerAddress, httpserver.MetricRouter(m, pgDB)))
+	logger.Log.Sugar().Fatalf("Server stopped with error: %s", http.ListenAndServe(conf.ServerAddress, httpserver.MetricRouter(m, pgDB, conf.Key)))
 
 }

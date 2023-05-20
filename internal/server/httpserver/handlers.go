@@ -31,6 +31,7 @@ type DataBaseHandler interface {
 type MetricHandler struct {
 	Storage   Storager
 	DBHandler DataBaseHandler
+	Key       string
 }
 
 // metrics is a struct for metrics with json tags
@@ -42,8 +43,8 @@ type metrics struct {
 }
 
 // NewMetricHandler creates a new MetricHandler
-func NewMetricHandler(s Storager, baser DataBaseHandler) *MetricHandler {
-	return &MetricHandler{Storage: s, DBHandler: baser}
+func NewMetricHandler(s Storager, baser DataBaseHandler, k string) *MetricHandler {
+	return &MetricHandler{Storage: s, DBHandler: baser, Key: k}
 }
 
 // UpdatePage is a handler for metrics (POST requests)
@@ -210,6 +211,19 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	var MetricFromRequest metrics
 
+	checkSum := r.Header.Get("HashSHA256")
+	if checkSum != "" && m.Key != "" {
+		ok, err := checkDataHash(checkSum, m.Key, buf.Bytes())
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		if !ok {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+	}
+
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -252,6 +266,17 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(1 * time.Second)
 	//prepare response
 	response, _ := json.Marshal(MetricFromRequest)
+
+	if m.Key != "" {
+		hash, err := GetHash(m.Key, response)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		hashHeader := fmt.Sprintf("%x", hash)
+		w.Header().Set("HashSHA256", hashHeader)
+	}
+	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
 	//this code below does not work with gzip middleware
 	//so i hard nailed the header in the middleware code
@@ -277,6 +302,20 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 	//read request body and unmarshal it to MetricFromRequest
 	var buf bytes.Buffer
 	var MetricFromRequest metrics
+
+	checkSum := r.Header.Get("HashSHA256")
+	if checkSum != "" && m.Key != "" {
+		ok, err := checkDataHash(checkSum, m.Key, buf.Bytes())
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		if !ok {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+	}
+
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -317,6 +356,15 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	if m.Key != "" {
+		hash, err := GetHash(m.Key, response)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		hashHeader := fmt.Sprintf("%x", hash)
+		w.Header().Set("HashSHA256", hashHeader)
+	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(response)
@@ -355,9 +403,21 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
-
 		return
 	}
+	checkSum := r.Header.Get("HashSHA256")
+	if checkSum != "" && m.Key != "" {
+		ok, err := checkDataHash(checkSum, m.Key, buf.Bytes())
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		if !ok {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+	}
+
 	err = json.Unmarshal(buf.Bytes(), &MetricsFromRequest)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -389,4 +449,15 @@ func (m *MetricHandler) UpdatesBatch(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	answer := []byte("OK")
+	if m.Key != "" {
+		hash, err := GetHash(m.Key, answer)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		hashHeader := fmt.Sprintf("%x", hash)
+		w.Header().Set("HashSHA256", hashHeader)
+	}
+	w.WriteHeader(http.StatusOK)
 }

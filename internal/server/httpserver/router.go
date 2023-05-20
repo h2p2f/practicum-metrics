@@ -5,9 +5,9 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 )
 
-func MetricRouter(m Storager, db DataBaseHandler) chi.Router {
+func MetricRouter(m Storager, db DataBaseHandler, k string) chi.Router {
 	//get httpserver
-	handler := NewMetricHandler(m, db)
+	handler := NewMetricHandler(m, db, k)
 	//create router
 	r := chi.NewRouter()
 	//add middlewares

@@ -62,7 +62,7 @@ func SendMetrics(met [][]byte, address string) (err error) {
 	return nil
 }
 
-func SendBatchMetrics(met []byte, address string) (err error) {
+func SendBatchMetrics(met []byte, checkSum [32]byte, address string) (err error) {
 	//compress data
 	buf, err := Compress(met)
 	if err != nil {
@@ -72,11 +72,13 @@ func SendBatchMetrics(met []byte, address string) (err error) {
 	client := resty.New()
 	//some autotests can be faster than server starts, so we need to retry three times, not more :)
 	client.SetRetryCount(3).SetRetryWaitTime(200 * time.Millisecond)
-
+	hash := fmt.Sprintf("%x", checkSum)
+	fmt.Println("hash: ", hash)
 	//upgrading request's headers
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
+		SetHeaderVerbatim("HashSHA256", hash).
 		SetBody(buf).
 		Post(address + "/updates/")
 	if err != nil {

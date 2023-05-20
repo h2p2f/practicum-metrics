@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/h2p2f/practicum-metrics/internal/client/hash"
 	"log"
 	"syscall"
 	"time"
@@ -16,7 +17,7 @@ import (
 func getMetrics(m *metrics.RuntimeMetrics, pool time.Duration) {
 	for {
 		m.Monitor()
-		time.Sleep(pool * time.Second)
+		time.Sleep(pool)
 	}
 }
 func main() {
@@ -34,6 +35,7 @@ func main() {
 	logger.Log.Sugar().Infof("Running agent for server: %s ", conf.Address)
 	logger.Log.Sugar().Infof("Report to server interval: %s ", conf.ReportInterval)
 	logger.Log.Sugar().Infof("Pool interval: %s ", conf.PoolInterval)
+	logger.Log.Sugar().Infof("Key to calculate checksum: %s ", conf.Key)
 
 	//create new metrics
 	m := new(metrics.RuntimeMetrics)
@@ -45,14 +47,21 @@ func main() {
 	//start reporting in main goroutine
 	for {
 		//we sleep here, because we need to report metrics after poolInterval
-		time.Sleep(conf.ReportInterval * time.Second)
+		time.Sleep(conf.ReportInterval)
 		//get metrics in json format
 		jsonMetrics := m.JSONMetrics()
-
+		var checkSum [32]byte
+		if conf.Key != "" {
+			var err error
+			checkSum, err = hash.GetHash(conf.Key, jsonMetrics)
+			if err != nil {
+				logger.Log.Sugar().Errorf("key not presented: %s", err)
+			}
+		}
 		//prepare metrics to send
 		//if it needs to send metrics by one - uncomment next line and comment line 56
 		//err := httpclient.SendMetrics(jsonMetrics, conf.Address)
-		err := httpclient.SendBatchMetrics(jsonMetrics, conf.Address)
+		err := httpclient.SendBatchMetrics(jsonMetrics, checkSum, conf.Address)
 		if err != nil {
 			logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
 			//if broken pipe - reconnect

@@ -30,6 +30,7 @@ type serverConfig struct {
 	Database string
 	UseDB    bool
 	UseFile  bool
+	Key      string
 }
 
 // NewConfig is a function that returns a new config
@@ -42,6 +43,7 @@ func NewConfig() *serverConfig {
 		Database:        "host=localhost user=practicum password=yandex dbname=postgres sslmode=disable",
 		UseDB:           false,
 		UseFile:         false,
+		Key:             "",
 	}
 }
 
@@ -53,7 +55,7 @@ func (c *serverConfig) GetConfig() *serverConfig {
 }
 
 // SetConfig is a function that sets config
-func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool, db string, udb bool, uf bool) *serverConfig {
+func (c *serverConfig) SetConfig(address string, interval time.Duration, path string, restore bool, db string, udb bool, uf bool, key string) *serverConfig {
 	c.ServerAddress = address
 	c.StoreInterval = interval
 	c.PathToStoreFile = path
@@ -61,10 +63,11 @@ func (c *serverConfig) SetConfig(address string, interval time.Duration, path st
 	c.Database = db
 	c.UseDB = udb
 	c.UseFile = uf
+	c.Key = key
 	return c
 }
 
-func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) {
+func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool, string) {
 	var (
 		flagRunAddr       string
 		flagStoreInterval time.Duration
@@ -74,6 +77,7 @@ func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		databaseVar       string
 		useDatabase       bool
 		useFile           bool
+		key               string
 	)
 	useFile = false
 	useDatabase = false
@@ -87,6 +91,7 @@ func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 	flag.StringVar(&databaseVar, "d",
 		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
 		"databaseVar to store metrics")
+	flag.StringVar(&key, "k", "", "key to calculate data's hash")
 
 	flag.Parse()
 
@@ -126,6 +131,9 @@ func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		databaseVar = envDatabase
 		useDatabase = true
 	}
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		key = envKey
+	}
 	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
 	host := "localhost:"
 	if isNumeric(flagRunAddr) {
@@ -133,7 +141,11 @@ func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool) 
 		fmt.Println("Running server on", flagRunAddr)
 	}
 
-	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, databaseVar, useDatabase, useFile
+	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, databaseVar, useDatabase, useFile, key
+}
+
+func (c *serverConfig) GetKey() string {
+	return c.Key
 }
 
 // isNumeric is a function that checks if string contains only digits

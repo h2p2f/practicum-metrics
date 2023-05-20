@@ -21,27 +21,28 @@ func isNumeric(s string) bool {
 }
 
 // GetFlagAndEnvClient is a function that returns flag and env variables
-func GetFlagAndEnvClient() (string, time.Duration, time.Duration) {
+func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	var flagRunPort string
 	var reportInterval time.Duration
 	var poolInterval time.Duration
+	var key string
 
 	//------------------flags and env variables------------------
-	//temporary local variables for flags
-	//this code has no grace, but it works
-	var r, p int
-	//parse flags
+
 	flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
-	//TODO: fix this shitcode
-	flag.IntVar(&r, "r", 10, "report to server interval in seconds")
-	flag.IntVar(&p, "p", 2, "pool interval in seconds")
+	//flag.IntVar(&r, "r", 10, "report to server interval in seconds")
+	flag.DurationVar(&reportInterval, "r", 10*time.Second, "report to server interval in seconds")
+	flag.DurationVar(&poolInterval, "p", 2*time.Second, "pool interval in seconds")
+	//flag.IntVar(&p, "p", 2, "pool interval in seconds")
+	flag.StringVar(&key, "k", "", "key to calculate data's hash")
 	flag.Parse()
 	//convert int to duration
-	reportInterval = time.Duration(r)
+	//reportInterval = time.Duration(r)
 	//set poolInterval
-	poolInterval = time.Duration(p)
+	//poolInterval = time.Duration(p)
 	//get env variables, if they exist drop flags
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+
 		envReportInterval, err := strconv.Atoi(envReportInterval)
 		if err != nil {
 			log.Fatal(err)
@@ -58,6 +59,9 @@ func GetFlagAndEnvClient() (string, time.Duration, time.Duration) {
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
 		flagRunPort = envAddress
 	}
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		key = envKey
+	}
 	//------------------start agent------------------
 	//set host
 
@@ -68,5 +72,5 @@ func GetFlagAndEnvClient() (string, time.Duration, time.Duration) {
 	} else if !strings.Contains(flagRunPort, host) {
 		host += flagRunPort
 	}
-	return host, reportInterval, poolInterval
+	return host, key, reportInterval, poolInterval
 }

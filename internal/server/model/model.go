@@ -14,7 +14,6 @@ type MemStorage struct {
 	//mut      sync.RWMutex
 	Gauges   map[string][]float64
 	Counters map[string]int64
-	//TODO: deal with scopes
 }
 
 type metrics struct {
