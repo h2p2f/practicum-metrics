@@ -36,29 +36,25 @@ func Compress(data []byte) ([]byte, error) {
 }
 
 // this function is unused now
-func SendMetrics(met [][]byte, address string) (err error) {
-	for _, data := range met {
-		//compress data, this comment wrote captain obvious
-		buf, err := Compress(data)
-		if err != nil {
-			return err
-		}
-		//send data to server
-		client := resty.New()
-		//some autotests can be faster than server starts, so we need to retry three times, not more :)
-		client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second)
-		//upgrading request's headers
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetHeader("Content-Encoding", "gzip").
-			SetBody(buf).
-			Post(address + "/update/")
-		if err != nil {
-			return err
-		}
-		logger.Log.Sugar().Info("received response from server: ", resp.StatusCode())
-		fmt.Println("received response from server: ", resp.StatusCode())
+func SendMetric(met []byte, checkSum [32]byte, address string) (err error) {
+
+	buf, err := Compress(met)
+	if err != nil {
+		return err
 	}
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second)
+	hash := fmt.Sprintf("%x", checkSum)
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Encoding", "gzip").
+		SetHeaderVerbatim("HashSHA256", hash).
+		SetBody(buf).
+		Post(address + "/update/")
+	if err != nil {
+		return err
+	}
+	logger.Log.Sugar().Info("received response from server: ", resp.StatusCode())
 	return nil
 }
 

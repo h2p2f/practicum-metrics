@@ -12,12 +12,15 @@ func checkDataHash(checkSum string, key string, data []byte) (bool, error) {
 	if key == "" {
 		return false, ErrEmptyKey
 	}
-	h := sha256.New()
-	h.Write(data)
+	//h := sha256.New()
+	//h.Write(data)
 	//controlCheckSum := h.Sum(nil)
 	requestCheckSum := sha256.Sum256(data)
 	controlCheckSum := fmt.Sprintf("%x", requestCheckSum)
+	fmt.Println(checkSum)
+	fmt.Println(controlCheckSum)
 	if checkSum != controlCheckSum {
+		fmt.Println("wrong checksum")
 		return false, nil
 	}
 	return true, nil

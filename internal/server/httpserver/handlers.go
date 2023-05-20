@@ -3,6 +3,7 @@ package httpserver
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -211,24 +212,22 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	var MetricFromRequest metrics
 
-	checkSum := r.Header.Get("HashSHA256")
-	if checkSum != "" && m.Key != "" {
-		ok, err := checkDataHash(checkSum, m.Key, buf.Bytes())
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		if !ok {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-	}
-
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	checkSum := r.Header.Get("HashSHA256")
+	if checkSum != "" && m.Key != "" {
+		controlCheckSum := fmt.Sprintf("%x", sha256.Sum256(buf.Bytes()))
+
+		if controlCheckSum != checkSum {
+			fmt.Println("wrong checksum", controlCheckSum, checkSum)
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+	}
+
 	if err = json.Unmarshal(buf.Bytes(), &MetricFromRequest); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
@@ -366,7 +365,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HashSHA256", hashHeader)
 	}
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	//w.WriteHeader(http.StatusOK)
 	_, err = w.Write(response)
 	if err != nil {
 		fmt.Println(err)

@@ -21,12 +21,13 @@ func isNumeric(s string) bool {
 }
 
 // GetFlagAndEnvClient is a function that returns flag and env variables
-func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
+func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration, bool, int) {
 	var flagRunPort string
 	var reportInterval time.Duration
 	var poolInterval time.Duration
 	var key string
-	var r, p int
+	var r, p, rateLimit int
+	var batch bool
 
 	//------------------flags and env variables------------------
 
@@ -36,11 +37,14 @@ func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	//flag.DurationVar(&reportInterval, "r", 10*time.Second, "report to server interval in seconds")
 	//flag.DurationVar(&poolInterval, "p", 2*time.Second, "pool interval in seconds")
 	flag.StringVar(&key, "k", "", "key to calculate data's hash if presented")
+	flag.BoolVar(&batch, "b", true, "batch mode")
+	flag.IntVar(&rateLimit, "l", 6, "requests rate limit")
+
 	flag.Parse()
 	//convert int to duration
-	reportInterval = time.Duration(r)
+	reportInterval = time.Duration(r) * time.Second
 	//set poolInterval
-	poolInterval = time.Duration(p)
+	poolInterval = time.Duration(p) * time.Second
 	//get env variables, if they exist drop flags
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 
@@ -63,6 +67,17 @@ func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	if envKey := os.Getenv("KEY"); envKey != "" {
 		key = envKey
 	}
+	if envBatch := os.Getenv("BATCH"); envBatch != "" {
+		batch = true
+	}
+	if envRateLimit := os.Getenv("RATE_LIMIT"); envRateLimit != "" {
+		envRateLimit, err := strconv.Atoi(envRateLimit)
+		if err != nil {
+			panic(err)
+		}
+		rateLimit = envRateLimit
+	}
+
 	//------------------start agent------------------
 	//set host
 
@@ -73,5 +88,5 @@ func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	} else if !strings.Contains(flagRunPort, host) {
 		host += flagRunPort
 	}
-	return host, key, reportInterval, poolInterval
+	return host, key, reportInterval, poolInterval, batch, rateLimit
 }
