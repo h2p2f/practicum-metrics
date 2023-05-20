@@ -35,8 +35,9 @@ func main() {
 	logger.Log.Sugar().Infof("Running agent for server: %s ", conf.Address)
 	logger.Log.Sugar().Infof("Report to server interval: %s ", conf.ReportInterval)
 	logger.Log.Sugar().Infof("Pool interval: %s ", conf.PoolInterval)
-	logger.Log.Sugar().Infof("Key to calculate checksum: %s ", conf.Key)
-
+	if conf.Key != "" {
+		logger.Log.Sugar().Info("calculate checksum - true")
+	}
 	//create new metrics
 	m := new(metrics.RuntimeMetrics)
 	m.NewMetrics()

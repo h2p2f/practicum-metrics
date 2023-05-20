@@ -34,7 +34,7 @@ func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	flag.DurationVar(&reportInterval, "r", 10*time.Second, "report to server interval in seconds")
 	flag.DurationVar(&poolInterval, "p", 2*time.Second, "pool interval in seconds")
 	//flag.IntVar(&p, "p", 2, "pool interval in seconds")
-	flag.StringVar(&key, "k", "", "key to calculate data's hash")
+	flag.StringVar(&key, "k", "", "key to calculate data's hash if presented")
 	flag.Parse()
 	//convert int to duration
 	//reportInterval = time.Duration(r)

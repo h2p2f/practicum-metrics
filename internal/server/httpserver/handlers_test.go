@@ -90,7 +90,7 @@ func TestMetricHandler_UpdatePage(t *testing.T) {
 			req := httptest.NewRequest("POST", "/update/"+tt.metric+"/"+tt.metricName+"/"+tt.metricValue, nil)
 			r := chi.NewRouter()
 			testStorage := model.NewMemStorage()
-			handler := NewMetricHandler(testStorage, nil)
+			handler := NewMetricHandler(testStorage, nil, "")
 			r.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
@@ -174,7 +174,7 @@ func TestMetricHandler_GetMetricValue(t *testing.T) {
 			reqGet := httptest.NewRequest("GET", "/value/"+tt.metric+"/"+tt.metricName, nil)
 			r := chi.NewRouter()
 			testStorage := model.NewMemStorage()
-			handler := NewMetricHandler(testStorage, nil)
+			handler := NewMetricHandler(testStorage, nil, "")
 			r.Get("/value/{metric}/{key}", handler.GetMetricValue)
 			r.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 			w := httptest.NewRecorder()
@@ -236,7 +236,7 @@ func TestMetricHandler_GetMetricCounterSum(t *testing.T) {
 		},
 	}
 	testStorage := model.NewMemStorage()
-	handler := NewMetricHandler(testStorage, nil)
+	handler := NewMetricHandler(testStorage, nil, "")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqPost := httptest.NewRequest("POST", "/update/"+tt.metric+"/"+tt.metricName+"/"+tt.metricValue, nil)
@@ -280,7 +280,7 @@ func TestMetricHandler_MainPage(t *testing.T) {
 			req := httptest.NewRequest("GET", "/", nil)
 			r := chi.NewRouter()
 			testStorage := model.NewMemStorage()
-			handler := NewMetricHandler(testStorage, nil)
+			handler := NewMetricHandler(testStorage, nil, "")
 			r.Get("/", handler.MainPage)
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
@@ -362,7 +362,7 @@ func TestMetricHandler_UpdateAndValueJSON(t *testing.T) {
 		},
 	}
 	testStorage := model.NewMemStorage()
-	handler := NewMetricHandler(testStorage, nil)
+	handler := NewMetricHandler(testStorage, nil, "")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			delta := rand.Int63()
