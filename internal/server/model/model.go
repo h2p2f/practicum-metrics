@@ -67,7 +67,7 @@ func (m *MemStorage) SetCounter(name string, value int64) {
 // GetGauge gets a gauge value
 func (m *MemStorage) GetGauge(name string) ([]float64, bool) {
 	m.mut.RLock()
-	m.mut.RUnlock()
+	defer m.mut.RUnlock()
 	value, ok := m.Gauges[name]
 	if !ok {
 		return nil, false
