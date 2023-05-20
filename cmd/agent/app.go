@@ -26,20 +26,21 @@ func GetFlagAndEnvClient() (string, string, time.Duration, time.Duration) {
 	var reportInterval time.Duration
 	var poolInterval time.Duration
 	var key string
+	var r, p int
 
 	//------------------flags and env variables------------------
 
 	flag.StringVar(&flagRunPort, "a", "localhost:8080", "port to run server on")
-	//flag.IntVar(&r, "r", 10, "report to server interval in seconds")
-	flag.DurationVar(&reportInterval, "r", 10*time.Second, "report to server interval in seconds")
-	flag.DurationVar(&poolInterval, "p", 2*time.Second, "pool interval in seconds")
-	//flag.IntVar(&p, "p", 2, "pool interval in seconds")
+	flag.IntVar(&r, "r", 10, "report to server interval in seconds")
+	flag.IntVar(&p, "p", 2, "pool interval in seconds")
+	//flag.DurationVar(&reportInterval, "r", 10*time.Second, "report to server interval in seconds")
+	//flag.DurationVar(&poolInterval, "p", 2*time.Second, "pool interval in seconds")
 	flag.StringVar(&key, "k", "", "key to calculate data's hash if presented")
 	flag.Parse()
 	//convert int to duration
-	//reportInterval = time.Duration(r)
+	reportInterval = time.Duration(r)
 	//set poolInterval
-	//poolInterval = time.Duration(p)
+	poolInterval = time.Duration(p)
 	//get env variables, if they exist drop flags
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 
