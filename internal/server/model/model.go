@@ -69,6 +69,9 @@ func (m *MemStorage) GetGauge(name string) ([]float64, bool) {
 	m.mut.RLock()
 	m.mut.RUnlock()
 	value, ok := m.Gauges[name]
+	if !ok {
+		return nil, false
+	}
 	return value, ok
 }
 
