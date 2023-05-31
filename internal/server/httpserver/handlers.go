@@ -18,9 +18,9 @@ import (
 type Storager interface {
 	SetGauge(name string, value float64)
 	SetCounter(name string, value int64)
-	GetGauge(name string) ([]float64, bool)
+	GetGauge(name string) (float64, bool)
 	GetCounter(name string) (int64, bool)
-	GetAllGauges() map[string][]float64
+	GetAllGauges() map[string]float64
 	GetAllCounters() map[string]int64
 }
 
@@ -151,7 +151,7 @@ func (m *MetricHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 			//if there is such key, return value
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			_, er := w.Write([]byte(strconv.FormatFloat(n[len(n)-1], 'f', -1, 64)))
+			_, er := w.Write([]byte(strconv.FormatFloat(n, 'f', -1, 64)))
 			if er != nil {
 				fmt.Println(err)
 			}
@@ -188,7 +188,7 @@ func (m *MetricHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	for k, v := range m.Storage.GetAllGauges() {
-		_, err := w.Write([]byte(fmt.Sprintf("<p> %s: %f</p>", k, v[len(v)-1])))
+		_, err := w.Write([]byte(fmt.Sprintf("<p> %s: %f</p>", k, v)))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -262,7 +262,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	//this code is for an incorrect test of 11 increments - to get metrics,
 	//the test immediately accesses the database without waiting for a White to it
-	time.Sleep(1 * time.Second)
+	//time.Sleep(1 * time.Second)
 	//prepare response
 	response, _ := json.Marshal(MetricFromRequest)
 
@@ -280,7 +280,7 @@ func (m *MetricHandler) UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	//this code below does not work with gzip middleware
 	//so i hard nailed the header in the middleware code
 	//TODO: fix it
-	w.WriteHeader(http.StatusOK)
+	//w.WriteHeader(http.StatusOK)
 	_, err = w.Write(response)
 	if err != nil {
 		fmt.Println(err)
@@ -346,7 +346,7 @@ func (m *MetricHandler) ValueJSON(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			MetricFromRequest.Value = &value[len(value)-1]
+			MetricFromRequest.Value = &value
 		}
 	}
 	//still prepare response

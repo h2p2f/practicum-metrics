@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// PGDB: create struct for DB
+// PGDB create struct for DB
 type PGDB struct {
 	db     *sql.DB
 	logger *zap.Logger
@@ -97,49 +97,6 @@ func (pgdb *PGDB) InsertMetric(ctx context.Context, id string, mtype string, del
 		return err
 	}
 	return nil
-}
-
-// UpdateMetric is a function that updates a metric in the database
-// used in write func
-func (pgdb *PGDB) UpdateMetric(ctx context.Context, id string, mtype string, delta *int64, value *float64) (err error) {
-	query := `UPDATE metrics SET delta = $1, value = $2 WHERE id = $3 AND mtype = $4;`
-	_, err = pgdb.db.ExecContext(ctx, query, delta, value, id, mtype)
-	if err != nil {
-		pgdb.logger.Sugar().Errorf("Error updating metric: %v", err)
-		return err
-	}
-	return nil
-}
-
-// GetAllID is a function that returns all id from the database
-// used in write func
-func (pgdb *PGDB) GetAllID(ctx context.Context) (ids []string, err error) {
-	query := `SELECT id FROM metrics;`
-	rows, err := pgdb.db.QueryContext(ctx, query)
-	if err != nil {
-		pgdb.logger.Sugar().Errorf("Error getting all id: %v", err)
-		return nil, err
-	}
-	if rows.Err() != nil {
-		pgdb.logger.Sugar().Errorf("Error getting all id: %v", err)
-		return nil, err
-	}
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			pgdb.logger.Sugar().Errorf("Error closing rows: %v", err)
-		}
-	}()
-	for rows.Next() {
-		var id string
-		err = rows.Scan(&id)
-		if err != nil {
-			pgdb.logger.Sugar().Errorf("Error scanning rows: %v", err)
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
 }
 
 // GetValuesByID is a function that returns value by id from the database
@@ -228,7 +185,6 @@ func (pgdb *PGDB) Write(ctx context.Context, met [][]byte) error {
 		if err != nil {
 			pgdb.logger.Sugar().Errorf("Error commit transaction: %v", err)
 		}
-
 	}
 	pgdb.logger.Sugar().Infof("Commited all transactions, data saved to DB successfully")
 	return nil

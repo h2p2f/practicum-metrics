@@ -17,10 +17,10 @@ func MetricRouter(m Storager, db DataBaseHandler, k string) chi.Router {
 	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
 	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
 	loggedAndZippedRouter.Post("/updates/", handler.UpdatesBatch)
+	loggedAndZippedRouter.Get("/", handler.MainPage)
 	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
 	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
 	loggedRouter.Get("/ping", handler.DBPing)
-	loggedAndZippedRouter.Get("/", handler.MainPage)
-	//
+
 	return r
 }

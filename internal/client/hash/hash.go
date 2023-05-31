@@ -5,6 +5,7 @@ import (
 	"errors"
 )
 
+// GetHash - function to get hash of request data
 var ErrEmptyKey = errors.New("empty key")
 
 func GetHash(key string, value []byte) ([32]byte, error) {

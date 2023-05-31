@@ -19,8 +19,8 @@ func TestSetGaugeStorage(t *testing.T) {
 			metric: "CPU",
 			value:  0.0001,
 			want: &MemStorage{
-				Gauges: map[string][]float64{
-					"CPU": {0.0001},
+				Gauges: map[string]float64{
+					"CPU": 0.0001,
 				},
 				Counters: nil,
 			},
@@ -30,8 +30,8 @@ func TestSetGaugeStorage(t *testing.T) {
 			metric: "CPU",
 			value:  78,
 			want: &MemStorage{
-				Gauges: map[string][]float64{
-					"CPU": {0.0001},
+				Gauges: map[string]float64{
+					"CPU": 0.0001,
 				},
 				Counters: nil,
 			},
@@ -117,7 +117,7 @@ func TestGetGaugeStorage(t *testing.T) {
 			got.SetGauge(tt.metric, 0.0001)
 			val, _ := got.GetGauge(tt.metric)
 			res, _ := strconv.ParseFloat(tt.want, 64)
-			if val[0] != res {
+			if val != res {
 				t.Errorf("NewStorage() = %v, want %v", got, tt.want)
 			}
 		})
@@ -158,18 +158,18 @@ func TestGetAllGaugesStorage(t *testing.T) {
 
 	tests := []struct {
 		name string
-		want map[string][]float64
+		want map[string]float64
 	}{
 		{
 			name: "Positive test 1",
-			want: map[string][]float64{
-				"CPU": {0.0001},
+			want: map[string]float64{
+				"CPU": 0.0001,
 			},
 		},
 		{
 			name: "Positive test 2",
-			want: map[string][]float64{
-				"CPU": {0.0001, 0.0001},
+			want: map[string]float64{
+				"CPU": 0.0001,
 			},
 		},
 	}

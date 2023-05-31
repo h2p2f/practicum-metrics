@@ -12,7 +12,7 @@ import (
 type MemStorage struct {
 	//mutex is suspended work with files TODO: fix it
 	mut      sync.RWMutex
-	Gauges   map[string][]float64
+	Gauges   map[string]float64
 	Counters map[string]int64
 }
 
@@ -27,7 +27,7 @@ type metrics struct {
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
 		mut:      sync.RWMutex{},
-		Gauges:   make(map[string][]float64),
+		Gauges:   make(map[string]float64),
 		Counters: make(map[string]int64),
 	}
 }
@@ -54,7 +54,7 @@ func NewMetricsGauge(ID, MType string, value float64) *metrics {
 func (m *MemStorage) SetGauge(name string, value float64) {
 	m.mut.Lock()
 	defer m.mut.Unlock()
-	m.Gauges[name] = append(m.Gauges[name], value)
+	m.Gauges[name] = value
 }
 
 // SetCounter sets a counter value
@@ -64,27 +64,8 @@ func (m *MemStorage) SetCounter(name string, value int64) {
 	m.Counters[name] = value
 }
 
-// GetGauge gets a gauge value
-func (m *MemStorage) GetGauge(name string) ([]float64, bool) {
-	m.mut.RLock()
-	defer m.mut.RUnlock()
-	value, ok := m.Gauges[name]
-	if !ok {
-		return nil, false
-	}
-	return value, ok
-}
-
-// GetCounter gets a counter value
-func (m *MemStorage) GetCounter(name string) (int64, bool) {
-	m.mut.RLock()
-	defer m.mut.RUnlock()
-	value, ok := m.Counters[name]
-	return value, ok
-}
-
 // GetAllGauges gets all gauges
-func (m *MemStorage) GetAllGauges() map[string][]float64 {
+func (m *MemStorage) GetAllGauges() map[string]float64 {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
 	return m.Gauges
@@ -98,11 +79,6 @@ func (m *MemStorage) GetAllCounters() map[string]int64 {
 }
 
 // GetAllMetricsSliced gets all metrics
-// this code is not beautiful
-// but i received a some bug with pointers
-// if i put counters value to Metrics struct directly
-// i receive the same pointer for all counters
-// so i implemented via constructor
 func (m *MemStorage) GetAllMetricsSliced() []metrics {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
@@ -112,18 +88,19 @@ func (m *MemStorage) GetAllMetricsSliced() []metrics {
 		metrics = append(metrics, *met)
 	}
 	for key, value := range m.Gauges {
-		met := NewMetricsGauge(key, "gauge", value[len(value)-1])
+		met := NewMetricsGauge(key, "gauge", value)
 		metrics = append(metrics, *met)
 	}
 	return metrics
 }
 
+// GetAllInBytesSliced gets all metrics in bytes
 func (m *MemStorage) GetAllInBytesSliced() [][]byte {
 	var result [][]byte
 	m.mut.RLock()
 	defer m.mut.RUnlock()
 	for metric, value := range m.GetAllGauges() {
-		met := metrics{ID: metric, MType: "gauge", Value: &value[len(value)-1]}
+		met := metrics{ID: metric, MType: "gauge", Value: &value}
 		out, err := json.Marshal(met)
 		if err != nil {
 			log.Fatal(err)
@@ -141,24 +118,7 @@ func (m *MemStorage) GetAllInBytesSliced() [][]byte {
 	return result
 }
 
-// RestoreMetrics restores metrics from slice
-func (m *MemStorage) RestoreMetrics(metrics []metrics) {
-	//m.mut.Lock()
-	//defer m.mut.Unlock()
-	for _, metric := range metrics {
-		switch metric.MType {
-		case "counter":
-			{
-				m.SetCounter(metric.ID, *metric.Delta)
-			}
-		case "gauge":
-			{
-				m.SetGauge(metric.ID, *metric.Value)
-			}
-		}
-	}
-}
-
+// RestoreMetric restores metric from bytes
 func (m *MemStorage) RestoreMetric(data [][]byte) {
 	var met metrics
 	//m.mut.Lock()
@@ -179,4 +139,20 @@ func (m *MemStorage) RestoreMetric(data [][]byte) {
 			}
 		}
 	}
+}
+
+// GetGauge gets a gauge value
+func (m *MemStorage) GetGauge(name string) (float64, bool) {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+	value, ok := m.Gauges[name]
+	return value, ok
+}
+
+// GetCounter gets a counter value
+func (m *MemStorage) GetCounter(name string) (int64, bool) {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+	value, ok := m.Counters[name]
+	return value, ok
 }

@@ -15,14 +15,7 @@ func init() {
 	}
 }
 
-type metrics struct {
-	ID    string   `json:"id"`
-	MType string   `json:"type"`
-	Delta *int64   `json:"delta,omitempty"`
-	Value *float64 `json:"value,omitempty"`
-}
-
-// function Compress to compress data
+// Compress function to compress data
 func Compress(data []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	gz := gzip.NewWriter(buf)
@@ -35,7 +28,7 @@ func Compress(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// this function is unused now
+// SendMetric  - this function sends one metric to server
 func SendMetric(met []byte, checkSum [32]byte, address string) (err error) {
 
 	buf, err := Compress(met)
@@ -50,7 +43,7 @@ func SendMetric(met []byte, checkSum [32]byte, address string) (err error) {
 		SetHeader("Content-Encoding", "gzip").
 		SetHeaderVerbatim("HashSHA256", hash).
 		SetBody(buf).
-		Post(address + "/update/")
+		Post("http://" + address + "/update/")
 	if err != nil {
 		return err
 	}
@@ -58,6 +51,7 @@ func SendMetric(met []byte, checkSum [32]byte, address string) (err error) {
 	return nil
 }
 
+// SendBatchMetrics - this function sends all metrics to server
 func SendBatchMetrics(met []byte, checkSum [32]byte, address string) (err error) {
 	//compress data
 	buf, err := Compress(met)
@@ -69,14 +63,13 @@ func SendBatchMetrics(met []byte, checkSum [32]byte, address string) (err error)
 	//some autotests can be faster than server starts, so we need to retry three times, not more :)
 	client.SetRetryCount(3).SetRetryWaitTime(200 * time.Millisecond)
 	hash := fmt.Sprintf("%x", checkSum)
-	fmt.Println("hash: ", hash)
 	//upgrading request's headers
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
 		SetHeaderVerbatim("HashSHA256", hash).
 		SetBody(buf).
-		Post(address + "/updates/")
+		Post("http://" + address + "/updates/")
 	if err != nil {
 		return err
 	}

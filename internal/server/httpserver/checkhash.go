@@ -8,6 +8,7 @@ import (
 
 var ErrEmptyKey = errors.New("empty key")
 
+// CheckDataHash - function to check hash of request data
 func checkDataHash(checkSum string, key string, data []byte) (bool, error) {
 	if key == "" {
 		return false, ErrEmptyKey
@@ -26,6 +27,7 @@ func checkDataHash(checkSum string, key string, data []byte) (bool, error) {
 	return true, nil
 }
 
+// GetHash - function to get hash of request data
 func GetHash(key string, value []byte) ([32]byte, error) {
 	if key == "" {
 		return [32]byte{}, ErrEmptyKey

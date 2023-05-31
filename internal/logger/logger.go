@@ -31,8 +31,9 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 // WriteHeader is implementation of http.ResponseWriter.WriteHeader
 // It also sets status code to responseData
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
-	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
+	r.ResponseWriter.WriteHeader(statusCode)
+
 }
 
 // InitLogger is function for initializing logger
