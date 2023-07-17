@@ -2,25 +2,41 @@ package httpserver
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
+
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/getallmetrics"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/getmetric"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatejson"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatemetric"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatesmetrics"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/compressormiddleware"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/hashmiddleware"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/loggermiddleware"
 )
 
-func MetricRouter(m Storager, db DataBaseHandler, k string) chi.Router {
-	//get httpserver
-	handler := NewMetricHandler(m, db, k)
-	//create router
+func MetricRouter(logger *zap.Logger, m DataBaser, key string) *chi.Mux {
+	db := NewDataBase(m)
 	r := chi.NewRouter()
-	//add middlewares
-	loggedAndZippedRouter := r.With(logger.WithLogging, GzipHanle)
-	loggedRouter := r.With(logger.WithLogging)
-	//add routes
-	loggedAndZippedRouter.Post("/update/", handler.UpdateJSON)
-	loggedAndZippedRouter.Post("/value/", handler.ValueJSON)
-	loggedAndZippedRouter.Post("/updates/", handler.UpdatesBatch)
-	loggedAndZippedRouter.Get("/", handler.MainPage)
-	loggedRouter.Post("/update/{metric}/{key}/{value}", handler.UpdatePage)
-	loggedRouter.Get("/value/{metric}/{key}", handler.GetMetricValue)
-	loggedRouter.Get("/ping", handler.DBPing)
+
+	r.Use(loggermiddleware.LogMiddleware(logger))
+	r.Use(compressormiddleware.ZipMiddleware)
+
+	if key != "" {
+		r.Use(hashmiddleware.HashMiddleware(logger, key))
+	}
+
+	r.Mount("/debug", middleware.Profiler())
+
+	r.Post("/update/{metric}/{key}/{value}", updatemetric.Handler(logger, db))
+	r.Post("/update/", updatejson.Handler(logger, db))
+	r.Post("/value/", updatejson.Handler(logger, db))
+	r.Post("/updates/", updatesmetrics.Handler(logger, db))
+
+	r.Get("/value/{metric}/{key}", getmetric.Handler(logger, db))
+	r.Get("/", getallmetrics.Handler(logger, db))
+	r.Get("/ping", dbping.Handler(logger, db))
 
 	return r
 }

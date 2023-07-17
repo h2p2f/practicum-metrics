@@ -1,0 +1,5 @@
+server: localhost:8080
+poll: 2s
+report: 10s
+key: secret
+rate_limit: 2

@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -10,207 +9,107 @@ import (
 	"unicode"
 )
 
-// serverConfig is a struct that contains server config
-type serverConfig struct {
-	ServerAddress   string
-	Database        string
-	PathToStoreFile string
-	Key             string
-	StoreInterval   time.Duration
-	Restore         bool
-	UseDB           bool
-	UseFile         bool
+type ServerConfig struct {
+	LogLevel string            `yaml:"log_level"`
+	Address  string            `yaml:"host"`
+	File     FileStorageConfig `yaml:"file_storage"`
+	DB       DatabaseConfig    `yaml:"database"`
+	Key      string            `yaml:"key"`
 }
 
-// NewConfig is a function that returns a new config
-func NewConfig() *serverConfig {
-	return &serverConfig{
-		ServerAddress:   "localhost:8080",
-		StoreInterval:   300 * time.Second,
-		PathToStoreFile: "/tmp/devops-metrics-db.json",
-		Restore:         true,
-		Database:        "host=localhost user=practicum password=yandex dbname=postgres sslmode=disable",
-		UseDB:           false,
-		UseFile:         false,
-		Key:             "",
+type FileStorageConfig struct {
+	Path          string        `yaml:"path"`
+	StoreInterval time.Duration `yaml:"flush_interval"`
+	Restore       bool          `yaml:"restore"`
+	UseFile       bool          `yaml:"use_file"`
+}
+
+type DatabaseConfig struct {
+	Dsn   string `yaml:"dsn"`
+	UsePG bool   `yaml:"use_pg"`
+}
+
+func GetConfig() *ServerConfig {
+
+	var config *ServerConfig
+
+	//file, err := os.Open("./config/server.yaml")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer file.Close()
+	//decoder := yaml.NewDecoder(file)
+	//err = decoder.Decode(&config)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+
+	config = &ServerConfig{
+		LogLevel: "info",
+		Address:  "localhost:8080",
+		File: FileStorageConfig{
+			Path:          "/tmp/metrics-db.json",
+			StoreInterval: 10 * time.Second,
+			Restore:       true,
+			UseFile:       false,
+		},
+		DB: DatabaseConfig{
+			Dsn:   "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+			UsePG: false,
+		},
+		Key: "secret",
 	}
-}
 
-//// SetServerAddress is a function that sets server address
-//
-//// GetConfig is a function that returns config
-//func (c *serverConfig) GetConfig() *serverConfig {
-//	return c
-//}
+	fs := flag.NewFlagSet("server", flag.ContinueOnError)
+	fs.StringVar(&config.Address, "a", config.Address, "Server address")
+	fs.StringVar(&config.File.Path, "f", config.File.Path, "File path")
+	fs.DurationVar(&config.File.StoreInterval, "i", config.File.StoreInterval, "Store interval")
+	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
+	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
+	fs.StringVar(&config.Key, "k", config.Key, "Key")
+	fs.Parse(os.Args[1:]) //nolint:errcheck
 
-// SetConfig is a function that sets config
-func (c *serverConfig) SetConfig() *serverConfig {
-	var (
-		flagRunAddr       string
-		flagStoreInterval time.Duration
-		flagStorePath     string
-		flagRestore       bool
-		IntervalDuration  time.Duration
-		databaseVar       string
-		useDatabase       bool
-		useFile           bool
-		key               string
-	)
-	useFile = false
-	useDatabase = false
+	if IsSet(fs, "f") {
+		config.File.UseFile = true
+	}
+	if IsSet(fs, "d") {
+		config.DB.UsePG = true
+	}
+	if !IsSet(fs, "k") {
+		config.Key = ""
+	}
 
-	// parse flags
-	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
-	//flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
-	flag.StringVar(&flagStorePath, "f", "/tmp/devops-metrics-db.json", "path to store metrics")
-	flag.DurationVar(&IntervalDuration, "i", 300*time.Second, "interval to store metrics in seconds")
-	flag.BoolVar(&flagRestore, "r", true, "restore metrics from file")
-	flag.StringVar(&databaseVar, "d",
-		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-		"databaseVar to store metrics")
-	flag.StringVar(&key, "k", "", "key to calculate data's hash")
-
-	flag.Parse()
-
-	flagStoreInterval = IntervalDuration
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		flagRunAddr = envAddress
+		config.Address = envAddress
 	}
-	if isFlagPassed("f") {
-		useFile = true
-	}
-	if isFlagPassed("d") {
-		useDatabase = true
+	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
+		config.File.Path = envFilePath
+		config.File.UseFile = true
 	}
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
-		var err error
 		if isNumeric(envStoreInterval) {
-			envStoreInterval = envStoreInterval + "s"
-
+			envStoreInterval += "s"
 		}
-		flagStoreInterval, err = time.ParseDuration(envStoreInterval)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	if envStorePath := os.Getenv("FILE_STORAGE_PATH"); envStorePath != "" {
-		flagStorePath = envStorePath
-		useFile = true
+		config.File.StoreInterval, _ = time.ParseDuration(envStoreInterval)
 	}
 	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
 		envRestore, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			log.Println(err)
 		}
-		flagRestore = envRestore
+		config.File.Restore = envRestore
 	}
-	if envDatabase := os.Getenv("DATABASE_DSN"); envDatabase != "" {
-		databaseVar = envDatabase
-		useDatabase = true
+	if envDSN := os.Getenv("DATABASE_DSN"); envDSN != "" {
+		config.DB.Dsn = envDSN
+		config.DB.UsePG = true
 	}
 	if envKey := os.Getenv("KEY"); envKey != "" {
-		key = envKey
+		config.Key = envKey
 	}
-	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
-	host := "localhost:"
-	if isNumeric(flagRunAddr) {
-		flagRunAddr = host + flagRunAddr
-		fmt.Println("Running server on", flagRunAddr)
-	}
+	return config
 
-	c.ServerAddress = flagRunAddr
-	c.StoreInterval = flagStoreInterval
-	c.PathToStoreFile = flagStorePath
-	c.Restore = flagRestore
-	c.Database = databaseVar
-	c.UseDB = useDatabase
-	c.UseFile = useFile
-	c.Key = key
-	return c
 }
 
-//func GetFlagsAndEnv() (string, time.Duration, string, bool, string, bool, bool, string) {
-//	var (
-//		flagRunAddr       string
-//		flagStoreInterval time.Duration
-//		flagStorePath     string
-//		flagRestore       bool
-//		IntervalDuration  time.Duration
-//		databaseVar       string
-//		useDatabase       bool
-//		useFile           bool
-//		key               string
-//	)
-//	useFile = false
-//	useDatabase = false
-//
-//	// parse flags
-//	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "port to run server on")
-//	//flag.IntVar(&interval, "i", 300, "interval to store metrics in seconds")
-//	flag.StringVar(&flagStorePath, "f", "/tmp/devops-metrics-db.json", "path to store metrics")
-//	flag.DurationVar(&IntervalDuration, "i", 300*time.Second, "interval to store metrics in seconds")
-//	flag.BoolVar(&flagRestore, "r", true, "restore metrics from file")
-//	flag.StringVar(&databaseVar, "d",
-//		"postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-//		"databaseVar to store metrics")
-//	flag.StringVar(&key, "k", "", "key to calculate data's hash")
-//
-//	flag.Parse()
-//
-//	flagStoreInterval = IntervalDuration
-//	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-//		flagRunAddr = envAddress
-//	}
-//	if isFlagPassed("f") {
-//		useFile = true
-//	}
-//	if isFlagPassed("d") {
-//		useDatabase = true
-//	}
-//	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
-//		var err error
-//		if isNumeric(envStoreInterval) {
-//			envStoreInterval = envStoreInterval + "s"
-//
-//		}
-//		flagStoreInterval, err = time.ParseDuration(envStoreInterval)
-//		if err != nil {
-//			fmt.Println(err)
-//		}
-//	}
-//	if envStorePath := os.Getenv("FILE_STORAGE_PATH"); envStorePath != "" {
-//		flagStorePath = envStorePath
-//		useFile = true
-//	}
-//	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
-//		envRestore, err := strconv.ParseBool(envRestore)
-//		if err != nil {
-//			log.Println(err)
-//		}
-//		flagRestore = envRestore
-//	}
-//	if envDatabase := os.Getenv("DATABASE_DSN"); envDatabase != "" {
-//		databaseVar = envDatabase
-//		useDatabase = true
-//	}
-//	if envKey := os.Getenv("KEY"); envKey != "" {
-//		key = envKey
-//	}
-//	//check if port is numeric - some people can try to run agent on :8080 - but it will be localhost:8080
-//	host := "localhost:"
-//	if isNumeric(flagRunAddr) {
-//		flagRunAddr = host + flagRunAddr
-//		fmt.Println("Running server on", flagRunAddr)
-//	}
-//
-//	return flagRunAddr, flagStoreInterval, flagStorePath, flagRestore, databaseVar, useDatabase, useFile, key
-//}
-
-func (c *serverConfig) GetKey() string {
-	return c.Key
-}
-
-// isNumeric is a function that checks if string contains only digits
 func isNumeric(s string) bool {
 	for _, c := range s {
 		if !unicode.IsDigit(c) {
@@ -220,12 +119,12 @@ func isNumeric(s string) bool {
 	return true
 }
 
-func isFlagPassed(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
+func IsSet(fs *flag.FlagSet, name string) bool {
+	set := false
+	fs.Visit(func(f *flag.Flag) {
 		if f.Name == name {
-			found = true
+			set = true
 		}
 	})
-	return found
+	return set
 }

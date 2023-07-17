@@ -1,12 +1,13 @@
 package logger
 
 import (
-	"go.uber.org/zap"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
-// Log is httpserver logger
+// Log is httpserver loggermiddleware
 var Log *zap.Logger = zap.NewNop()
 
 // responseData is struct for logging response data
@@ -36,7 +37,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 
 }
 
-// InitLogger is function for initializing logger
+// InitLogger is function for initializing loggermiddleware
 func InitLogger(level string) error {
 
 	lvl, err := zap.ParseAtomicLevel(level)
@@ -60,14 +61,9 @@ func WithLogging(h http.Handler) http.Handler {
 		responseData := &responseData{}
 		loggedw := loggingResponseWriter{w, responseData}
 		h.ServeHTTP(&loggedw, r)
-		//this is for structured logging
-		//Log.Info("Request", zap.String("url", r.URL.String()), zap.String("method", r.Method), zap.Duration("duration", time.Since(start)))
-		//Log.Info("Response", zap.Int("status", responseData.status), zap.Int("size", responseData.size))
-		//this is for human-readable logging
 		Log.Sugar().Infof("Request  - method: %s, url: %s, duration: %s", r.Method, r.URL.String(), time.Since(start))
 		Log.Sugar().Infof("Request Info - Accept-Encoding: %s, Content-Encoding: %s", r.Header.Get("Accept-Encoding"), r.Header.Get("Content-Encoding"))
-		Log.Sugar().Infof("Response - status: %d, size: %d ", responseData.status, responseData.size)
+		Log.Sugar().Infof("Response - status: %d", responseData.status)
 	}
-	//return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	return http.HandlerFunc(logFn)
 }

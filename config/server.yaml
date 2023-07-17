@@ -1,0 +1,11 @@
+log_level: info
+host: localhost:8080
+file_storage:
+  path: /tmp/metrics-db.json
+  flush_interval: 10s
+  restore: true
+  use_file: false
+database:
+  dsn: postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable
+  use_pg: false
+key: secret

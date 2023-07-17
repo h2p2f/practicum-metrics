@@ -2,94 +2,102 @@ package app
 
 import (
 	"context"
-	"github.com/h2p2f/practicum-metrics/internal/server/config"
-	"github.com/h2p2f/practicum-metrics/internal/server/database"
-	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
-	"github.com/h2p2f/practicum-metrics/internal/server/model"
-	"go.uber.org/zap"
+	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/h2p2f/practicum-metrics/internal/logger"
+	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage/filestorage"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage/inmemorystorage"
+	"github.com/h2p2f/practicum-metrics/internal/server/storage/postgrestorage"
 )
 
-// Run - function to run server
-func Run(logger *zap.Logger) {
-	//init config
-	conf := config.NewConfig()
-	conf.SetConfig()
+type DataBaser interface {
+	SetCounter(key string, value int64)
+	SetGauge(key string, value float64)
+	GetCounter(name string) (value int64, err error)
+	GetGauge(name string) (value float64, err error)
+	GetCounters() map[string]int64
+	GetGauges() map[string]float64
+	Ping() error
+}
 
-	//create model
-	m := model.NewMemStorage()
-	//create database and file model
-	pgDB := database.NewPostgresDB(conf.Database, logger)
+func Run() {
+
+	conf := config.GetConfig()
+
+	if err := logger.InitLogger(conf.LogLevel); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ctx := context.Background()
+
+	memDB := inmemorystorage.NewMemStorage(logger.Log)
+
+	var db DataBaser = memDB
+
+	file := filestorage.NewFileDB(conf.File.Path, conf.File.StoreInterval, logger.Log)
+
+	pgDB := postgrestorage.NewPostgresDB(conf.DB.Dsn, logger.Log)
 	defer pgDB.Close()
-	fileDB := database.NewFileDB(conf.PathToStoreFile, conf.StoreInterval, logger)
-	//create db and file models
-	db := database.NewDB(pgDB)
-	file := database.NewDB(fileDB)
 
-	//db := database.NewDB(pgDB, file)
-	logger.Sugar().Infof("need restore from model %t", conf.Restore)
-	//Create DB if not exist, restore metrics if it needs
-	if conf.UseDB {
-		conf.UseFile = false
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		err := db.DataBase.Create(ctx)
+	if conf.DB.UsePG {
+		err := pgDB.Create()
 		if err != nil {
-			logger.Sugar().Errorf("Error creating DB: %s", err)
+			logger.Log.Sugar().Errorf("Error creating DB: %s", err)
 		}
-		logger.Sugar().Infof("storage is DB %s", conf.Database)
-		//if restore need - restore from DB
-		if conf.Restore {
-			metrics, err := db.DataBase.Read(ctx)
-			if err != nil {
-				logger.Sugar().Errorf("Error reading metrics from DB: %s", err)
-			}
-			m.RestoreMetric(metrics)
+		db = pgDB
+	}
+
+	if !conf.DB.UsePG && conf.File.UseFile && conf.File.Restore {
+		metrics, err := file.Read(ctx)
+		if err != nil {
+			logger.Log.Sugar().Errorf("Error reading metrics from file: %s", err)
+
 		}
-		//if it needs use and restore from file
-	} else if conf.UseFile {
-		logger.Sugar().Infof("storage is file %s", conf.PathToStoreFile)
-		//if restore need - restore from file
-		if conf.Restore {
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-			defer cancel()
-			//metrics, err := db.File.ReadFromFile(ctx)
-			metrics, err := file.DataBase.Read(ctx)
-			if err != nil {
-				logger.Sugar().Errorf("Error reading metrics from file: %s", err)
-			}
-			m.RestoreMetric(metrics)
+		err = memDB.RestoreFromSerialized(metrics)
+		if err != nil {
+			logger.Log.Sugar().Errorf("Error restoring metrics from file: %s", err)
 		}
 	}
-	//periodically write to model
-	logger.Sugar().Infof("write to model interval %s", conf.StoreInterval)
-	t := time.NewTicker(conf.StoreInterval)
-	defer t.Stop()
-	go func() {
-		for range t.C {
-			logger.Sugar().Info("try to save data")
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			met := m.GetAllInBytesSliced()
-			if conf.UseDB {
-				err := db.DataBase.Write(ctx, met)
-				if err != nil {
-					logger.Sugar().Errorf("Error writing metrics to DB: %s", err)
-				}
-			}
-			if conf.UseFile {
-				err := file.DataBase.Write(ctx, met)
-				if err != nil {
-					logger.Sugar().Errorf("Error writing metrics to file: %s", err)
-				}
-			}
-			cancel()
-		}
-	}()
 
-	//start server with router
-	logger.Sugar().Infof("Server started on %s", conf.ServerAddress)
-	logger.Sugar().Fatalf("Server stopped with error: %s",
-		http.ListenAndServe(conf.ServerAddress, httpserver.MetricRouter(m, pgDB, conf.Key)))
+	if !conf.DB.UsePG && conf.File.UseFile {
+		t := time.NewTicker(conf.File.StoreInterval)
+		defer t.Stop()
+
+		go func() {
+			for range t.C {
+				metrics := memDB.GetAllSerialized()
+				err := file.Write(ctx, metrics)
+				if err != nil {
+					logger.Log.Sugar().Errorf("Error writing metrics to file: %s", err)
+				}
+			}
+		}()
+	}
+	fields := []zapcore.Field{
+		zap.String("address", conf.Address),
+		zap.String("log_level", conf.LogLevel),
+	}
+	if conf.DB.UsePG {
+		fields = append(fields, zap.String("postgreSQL database_dsn", conf.DB.Dsn))
+	} else if conf.File.UseFile {
+		fields = append(fields, zap.String("file path", conf.File.Path))
+		fields = append(fields, zap.String("file store interval", conf.File.StoreInterval.String()))
+		fields = append(fields, zap.Bool("restore from file", conf.File.Restore))
+	}
+	logger.Log.Info("Started server", fields...)
+
+	err := http.ListenAndServe(conf.Address, httpserver.MetricRouter(logger.Log, db, conf.Key))
+	if err != nil {
+		panic(err)
+	}
 
 }
