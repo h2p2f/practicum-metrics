@@ -31,7 +31,7 @@ type DatabaseConfig struct {
 
 func GetConfig() *ServerConfig {
 
-	var config *ServerConfig
+	//var config *ServerConfig
 
 	//file, err := os.Open("./config/server.yaml")
 	//if err != nil {
@@ -44,7 +44,7 @@ func GetConfig() *ServerConfig {
 	//	log.Fatal(err)
 	//}
 
-	config = &ServerConfig{
+	config := &ServerConfig{
 		LogLevel: "info",
 		Address:  "localhost:8080",
 		File: FileStorageConfig{
