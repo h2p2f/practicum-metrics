@@ -128,12 +128,13 @@ func ZipMiddleware(next http.Handler) http.Handler {
 		}
 		// this section for request with content-encoding: gzip
 		if sendGzip {
-			originWriter := w
-			compressedWriter := NewCompressWriter(w)
-			originWriter = compressedWriter
+			//originWriter := w
+			//compressedWriter := NewCompressWriter(w)
+			//originWriter = compressedWriter
+			originWriter := NewCompressWriter(w)
 			originWriter.Header().Set("Content-Encoding", "gzip")
-			defer compressedWriter.Close()
-
+			//defer compressedWriter.Close()
+			defer originWriter.Close()
 			compressedReader, err := NewCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

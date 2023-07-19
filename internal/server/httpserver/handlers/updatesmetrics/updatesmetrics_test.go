@@ -81,7 +81,7 @@ func Example() {
 	//объявляем тестовые переменные
 	//
 	//declare test variables
-	var gauge float64 = 0.001
+	var gauge = 0.001
 	var counter int64 = 10
 	//создаем тестовый объект
 	//
