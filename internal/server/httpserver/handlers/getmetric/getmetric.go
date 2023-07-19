@@ -1,3 +1,6 @@
+// Package getmetric содержит в себе http.Handler, который получает метрику и возвращает её значение.
+//
+// Package getmetric contains an http.Handler that gets the metric and returns its value.
 package getmetric
 
 import (
@@ -8,12 +11,20 @@ import (
 	"go.uber.org/zap"
 )
 
+// Getter это интерфейс, который получает метрику.
+//
+// Getter is an interface that gets the metric.
+//
 //go:generate mockery --name Getter --output ./mocks --filename mocks_getmetric.go
 type Getter interface {
 	GetCounter(name string) (value int64, err error)
 	GetGauge(name string) (value float64, err error)
 }
 
+// Handler возвращает http.HandlerFunc, который обрабатывает GET запросы и получает метрику.
+// Он записывает значение метрики в тело ответа, если метрика найдена.
+// В противном случае возвращает ошибку "Not found".
+//
 // Handler returns a http.HandlerFunc that handles GET requests and gets the metric.
 // It writes the metric value to the response body if the metric is found.
 // Otherwise, it returns a not found error.

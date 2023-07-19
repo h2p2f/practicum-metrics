@@ -1,3 +1,8 @@
+// Package compressormiddleware реализует обертку над http.ResponseWriter, которая сжимает ответы сервера с помощью gzip.
+// также реализует обертку над http.Request.Body, которая распаковывает тело запроса с помощью gzip.
+//
+// Package compressormiddleware implements a wrapper around http.ResponseWriter that compresses server responses using gzip.
+// also implements a wrapper around http.Request.Body that unpacks the request body using gzip.
 package compressormiddleware
 
 import (
@@ -7,34 +12,46 @@ import (
 	"strings"
 )
 
+// CompressWriter реализует http.ResponseWriter
+//
 // CompressWriter is implementation of http.ResponseWriter
 type CompressWriter struct {
 	w  http.ResponseWriter
 	zw *gzip.Writer
 }
 
+// CompressReader реализует io.ReadCloser
+//
 // CompressReader is implementation of io.ReadCloser
 type CompressReader struct {
 	r io.ReadCloser
 	z *gzip.Reader
 }
 
+// NewCompressWriter это конструктор для CompressWriter
+//
 // NewCompressWriter is constructor for CompressWriter
 func NewCompressWriter(w http.ResponseWriter) *CompressWriter {
 	zw := gzip.NewWriter(w)
 	return &CompressWriter{w, zw}
 }
 
+// Header реализует http.ResponseWriter.Header
+//
 // Header is implementation of http.ResponseWriter.Header
 func (cw *CompressWriter) Header() http.Header {
 	return cw.w.Header()
 }
 
+// Write реализует http.ResponseWriter.Write
+//
 // Write is implementation of http.ResponseWriter.Write
 func (cw *CompressWriter) Write(b []byte) (int, error) {
 	return cw.zw.Write(b)
 }
 
+// WriteHeader реализует http.ResponseWriter.WriteHeader
+//
 // WriteHeader is implementation of http.ResponseWriter.WriteHeader
 func (cw *CompressWriter) WriteHeader(statusCode int) {
 	cw.w.WriteHeader(statusCode)
@@ -43,11 +60,15 @@ func (cw *CompressWriter) WriteHeader(statusCode int) {
 	}
 }
 
+// Close закрывает gzip.Writer
+//
 // Close is closes gzip.Writer
 func (cw *CompressWriter) Close() error {
 	return cw.zw.Close()
 }
 
+// NewCompressReader это конструктор для CompressReader
+//
 // NewCompressReader is constructor for CompressReader
 func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 	z, err := gzip.NewReader(r)
@@ -57,11 +78,15 @@ func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 	return &CompressReader{r, z}, nil
 }
 
+// Read реализует io.ReadCloser.Read
+//
 // Read is implementation of io.ReadCloser.Read
 func (cr *CompressReader) Read(b []byte) (int, error) {
 	return cr.z.Read(b)
 }
 
+// Close реализует io.ReadCloser.Close
+//
 // Close is implementation of io.ReadCloser.Close
 func (cr *CompressReader) Close() error {
 	if err := cr.z.Close(); err != nil {
@@ -70,6 +95,9 @@ func (cr *CompressReader) Close() error {
 	return cr.r.Close()
 }
 
+// ZipMiddleware это middleware, который распаковывает запросы и сжимает ответы сервера с помощью gzip.
+//
+// ZipMiddleware is middleware that unpacks requests and compresses server responses using gzip.
 func ZipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		acceptEncoding := r.Header.Get("Accept-Encoding")
@@ -89,8 +117,13 @@ func ZipMiddleware(next http.Handler) http.Handler {
 
 			originWriter = compressedWriter
 			originWriter.Header().Set("Content-Encoding", "gzip")
-			defer compressedWriter.Close()
-
+			//defer compressedWriter.Close()
+			defer func() {
+				err := compressedWriter.Close()
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}()
 			next.ServeHTTP(originWriter, r)
 		}
 		// this section for request with content-encoding: gzip

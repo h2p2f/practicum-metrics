@@ -1,3 +1,6 @@
+// Package compressor реализует логику сжатия данных в gzip.
+//
+// Package compressor implements gzip data compression logic.
 package compressor
 
 import (
@@ -5,6 +8,9 @@ import (
 	"compress/gzip"
 )
 
+// Compress - функция для сжатия данных в gzip.
+//
+// Compress - function for compressing data into gzip.
 func Compress(data []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	gz := gzip.NewWriter(buf)

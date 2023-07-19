@@ -1,3 +1,6 @@
+// Package filestorage описывает хранилище метрик в файле.
+//
+// package filestorage describes a metric store in a file.
 package filestorage
 
 import (
@@ -10,6 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// FileDB - структура, описывающая хранилище метрик в файле.
+//
+// FileDB - a structure that describes a metric store in a file.
 type FileDB struct {
 	File     *os.File
 	FilePath string
@@ -18,6 +24,8 @@ type FileDB struct {
 	logger   *zap.Logger
 }
 
+// NewFileDB - конструктор для FileDB.
+//
 // NewFileDB is a function that returns a new fileDB
 func NewFileDB(filePath string, interval time.Duration, logger *zap.Logger) *FileDB {
 	return &FileDB{
@@ -27,11 +35,8 @@ func NewFileDB(filePath string, interval time.Duration, logger *zap.Logger) *Fil
 	}
 }
 
-// Create it is a stub function to implement the interface
-func (f *FileDB) Create(ctx context.Context) error {
-	return nil
-}
-
+// Write - функция, записывающая метрики в файл.
+//
 // Write is a function that writes metrics to file
 func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	var err error
@@ -54,6 +59,8 @@ func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	return nil
 }
 
+// Read - функция, считывающая метрики из файла.
+//
 // Read is a function that reads metrics from file
 func (f *FileDB) Read(ctx context.Context) ([][]byte, error) {
 	var err error

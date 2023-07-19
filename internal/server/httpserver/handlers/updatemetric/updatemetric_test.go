@@ -77,3 +77,43 @@ func TestUpdateMetric(t *testing.T) {
 		})
 	}
 }
+
+func Example() {
+	//создаем тестовый объект
+	//
+	//create a test object
+	t := &testing.T{}
+	//создаем моковый объект базы данных
+	//
+	//create a mock database object
+	updaterMock := mocks.NewUpdater(t)
+	updaterMock.On("SetGauge", "testKey", mock.Anything).Return(nil)
+	//создаем тестовый объект логгера
+	//
+	//create a test logger object
+	logger := zaptest.NewLogger(t)
+	//создаем объект запроса
+	//
+	//create a request object
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("metric", "gauge")
+	rctx.URLParams.Add("key", "testKey")
+	rctx.URLParams.Add("value", "10.01")
+	request := httptest.NewRequest(http.MethodPost, "/update/gauge/testKey/10.01", nil)
+	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
+	//создаем объект ответа
+	//
+	//create a response object
+	response := httptest.NewRecorder()
+	//вызываем обработчик
+	//
+	//call the handler
+	Handler(logger, updaterMock).ServeHTTP(response, request)
+	//выводим код ответа
+	//
+	//output response code
+	fmt.Println(response.Code)
+
+	// Output:
+	// 200
+}

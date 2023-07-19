@@ -1,3 +1,6 @@
+// Package updatemetric содержит в себе http.Handler, который обновляет метрику и возвращает http.StatusOK в случае успеха.
+//
+// package updatemetric contains an http.Handler that updates the metric and returns http.StatusOK if successful.
 package updatemetric
 
 import (
@@ -8,14 +11,23 @@ import (
 	"go.uber.org/zap"
 )
 
+// Updater это интерфейс, который обновляет метрику.
+//
+// Updater is an interface that updates the metric.
+//
 //go:generate mockery --name Updater --output ./mocks --filename mocks_updatemetric.go
 type Updater interface {
 	SetGauge(name string, value float64)
 	SetCounter(name string, value int64)
 }
 
+// Handler возвращает http.HandlerFunc, который обрабатывает POST запросы и обновляет метрику.
+// Он возвращает http.StatusOK в случае успеха.
+// В противном случае возвращает внутреннюю ошибку сервера.
+// данные для обновления получает в URI
+//
 // Handler returns a http.HandlerFunc that handles POST requests and updates the metric.
-// It writes "ok" to the response body if the update is successful.
+// It returns http.StatusOK if successful.
 // Otherwise, it returns an internal server error.
 // data to update receive in URI
 func Handler(log *zap.Logger, db Updater) http.HandlerFunc {

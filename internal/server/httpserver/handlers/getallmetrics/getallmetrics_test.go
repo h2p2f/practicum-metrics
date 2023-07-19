@@ -1,6 +1,7 @@
 package getallmetrics
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,4 +51,50 @@ func TestGetAllMetrics(t *testing.T) {
 
 		})
 	}
+}
+
+func Example() {
+	//создаем тестовый объект
+	//
+	//create a test object
+	t := &testing.T{}
+
+	//создаем тестовый объект логгера
+	//
+	//create a test logger object
+	logger := zaptest.NewLogger(t)
+
+	//создаем моковый объект базы данных
+	//
+	//create a mock database object
+	getterMock := mocks.NewGetter(t)
+
+	//прописываем ожидаемый результат
+	//
+	//specify the expected result
+	getterMock.On("GetCounters").Return(map[string]int64{"testKey": 1})
+	getterMock.On("GetGauges").Return(map[string]float64{"test1": 10})
+
+	//создаем объект запроса
+	//
+	//create a request object
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+
+	//создаем объект записи ответа
+	//
+	//create a response record object
+	rr := httptest.NewRecorder()
+
+	//вызываем обработчик
+	//
+	//call the handler
+	Handler(logger, getterMock).ServeHTTP(rr, req)
+
+	//выводим результат
+	//
+	//display the result
+	fmt.Println(rr.Body.String())
+
+	// Output:
+	//counters:<br><p> testKey: 1</p>gauges:<br><p> test1: 10.000000</p>
 }

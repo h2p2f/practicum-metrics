@@ -1,3 +1,6 @@
+// Package storage реализует хранилище метрик в памяти.
+//
+// Package storage implements a metric storage in memory.
 package storage
 
 import (
@@ -14,12 +17,18 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/agent/models"
 )
 
+// MetricStorage хранит метрики в памяти.
+//
+// MetricStorage stores metrics in memory.
 type MetricStorage struct {
 	mut     sync.RWMutex
 	gauge   map[string]float64
 	counter map[string]int64
 }
 
+// NewAgentStorage создает новое хранилище метрик.
+//
+// NewAgentStorage creates a new metric storage.
 func NewAgentStorage() *MetricStorage {
 	return &MetricStorage{
 		gauge:   make(map[string]float64),
@@ -27,6 +36,9 @@ func NewAgentStorage() *MetricStorage {
 	}
 }
 
+// RuntimeMetricsMonitor собирает метрики из runtime.
+//
+// RuntimeMetricsMonitor collects metrics from runtime.
 func (m *MetricStorage) RuntimeMetricsMonitor() {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
@@ -66,6 +78,9 @@ func (m *MetricStorage) RuntimeMetricsMonitor() {
 	m.counter["PollCount"]++
 }
 
+// GopsUtilizationMonitor собирает метрики из gopsutil.
+//
+// GopsUtilizationMonitor collects metrics from gopsutil.
 func (m *MetricStorage) GopsUtilizationMonitor() {
 	memory, err := mem.VirtualMemory()
 	if err != nil {
@@ -83,6 +98,8 @@ func (m *MetricStorage) GopsUtilizationMonitor() {
 
 }
 
+// URLMetrics генерирует URL для отправки метрик на сервер.
+// Необходима для обратной совместимости. В данный момент не используется.
 func (m *MetricStorage) URLMetrics(host string) []string {
 
 	m.mut.Lock()
@@ -102,6 +119,11 @@ func (m *MetricStorage) URLMetrics(host string) []string {
 	return urls
 }
 
+// JSONMetrics генерирует слайс JSON-объектов для отправки метрик на сервер.
+// Необходима для обратной совместимости. В данный момент не используется.
+//
+// JSONMetrics generates a slice of JSON objects to send metrics to the server.
+// Required for backward compatibility. Currently not used.
 func (m *MetricStorage) JSONMetrics() [][]byte {
 	var res [][]byte
 	var model models.Metric
@@ -138,6 +160,9 @@ func (m *MetricStorage) JSONMetrics() [][]byte {
 	return res
 }
 
+// BatchJSONMetrics генерирует JSON-объект для отправки метрик на сервер.
+//
+// BatchJSONMetrics generates a JSON object to send metrics to the server.
 func (m *MetricStorage) BatchJSONMetrics() []byte {
 	var res []byte
 	var modelSlice []models.Metric

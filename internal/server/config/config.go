@@ -1,7 +1,11 @@
+// Package config содержит в себе логику работы с конфигурацией сервера
+//
+// package config contains the logic of working with the server configuration
 package config
 
 import (
 	"flag"
+	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"strconv"
@@ -9,6 +13,9 @@ import (
 	"unicode"
 )
 
+// ServerConfig - структура конфигурации сервера
+//
+// ServerConfig - server configuration structure
 type ServerConfig struct {
 	LogLevel string            `yaml:"log_level"`
 	Address  string            `yaml:"host"`
@@ -17,6 +24,9 @@ type ServerConfig struct {
 	Key      string            `yaml:"key"`
 }
 
+// FileStorageConfig - структура конфигурации файлового хранилища
+//
+// FileStorageConfig - file storage configuration structure
 type FileStorageConfig struct {
 	Path          string        `yaml:"path"`
 	StoreInterval time.Duration `yaml:"flush_interval"`
@@ -24,27 +34,37 @@ type FileStorageConfig struct {
 	UseFile       bool          `yaml:"use_file"`
 }
 
+// DatabaseConfig - структура конфигурации базы данных
+//
+// DatabaseConfig - database configuration structure
 type DatabaseConfig struct {
 	Dsn   string `yaml:"dsn"`
 	UsePG bool   `yaml:"use_pg"`
 }
 
+// GetConfig - функция получения конфигурации сервера, обрабатывает yaml файл, флаги и переменные окружения
+//
+// GetConfig - function of obtaining the server configuration, processes the yaml file, flags and environment variables
 func GetConfig() *ServerConfig {
 
-	//var config *ServerConfig
+	var config *ServerConfig
 
-	//file, err := os.Open("./config/server.yaml")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer file.Close()
-	//decoder := yaml.NewDecoder(file)
-	//err = decoder.Decode(&config)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	file, err := os.Open("./config/server.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
+	decoder := yaml.NewDecoder(file)
+	err = decoder.Decode(&config)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	config := &ServerConfig{
+	config = &ServerConfig{
 		LogLevel: "info",
 		Address:  "localhost:8080",
 		File: FileStorageConfig{
@@ -67,15 +87,17 @@ func GetConfig() *ServerConfig {
 	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
 	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
 	fs.StringVar(&config.Key, "k", config.Key, "Key")
-	fs.Parse(os.Args[1:]) //nolint:errcheck
-
-	if IsSet(fs, "f") {
+	err = fs.Parse(os.Args[1:]) //nolint:errcheck
+	if err != nil {
+		log.Println(err)
+	}
+	if isSet(fs, "f") {
 		config.File.UseFile = true
 	}
-	if IsSet(fs, "d") {
+	if isSet(fs, "d") {
 		config.DB.UsePG = true
 	}
-	if !IsSet(fs, "k") {
+	if !isSet(fs, "k") {
 		config.Key = ""
 	}
 
@@ -110,6 +132,9 @@ func GetConfig() *ServerConfig {
 
 }
 
+// isNumeric - функция проверки строки на наличие в ней только цифр
+//
+// isNumeric - function of checking a string for the presence of only numbers in it
 func isNumeric(s string) bool {
 	for _, c := range s {
 		if !unicode.IsDigit(c) {
@@ -119,7 +144,10 @@ func isNumeric(s string) bool {
 	return true
 }
 
-func IsSet(fs *flag.FlagSet, name string) bool {
+// isSet - функция проверки наличия флага
+//
+// isSet - function of checking the presence of a flag
+func isSet(fs *flag.FlagSet, name string) bool {
 	set := false
 	fs.Visit(func(f *flag.Flag) {
 		if f.Name == name {

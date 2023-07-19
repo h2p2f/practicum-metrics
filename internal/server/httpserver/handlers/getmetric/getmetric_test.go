@@ -78,3 +78,45 @@ func TestGetMetric(t *testing.T) {
 		})
 	}
 }
+
+func Example() {
+	//создаем тестовый объект
+	//
+	//create a test object
+	t := &testing.T{}
+	//создаем моки
+	//
+	//create mocks
+	getterMock := mocks.NewGetter(t)
+	//прописываем ожидаемый результат
+	//
+	//specify the expected result
+	getterMock.On("GetGauge", "testKey").Return(float64(10), nil)
+	//создаем логгер
+	//
+	//create logger
+	logger := zaptest.NewLogger(t)
+	//создаем тестовый запрос
+	//
+	//create test request
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("metric", "gauge")
+	rctx.URLParams.Add("key", "testKey")
+	request := httptest.NewRequest(http.MethodGet, "/value/gauge/testKey", nil)
+	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
+	//создаем тестовый ответ
+	//
+	//create test response
+	response := httptest.NewRecorder()
+	//обрабатываем запрос
+	//
+	//handle request
+	Handler(logger, getterMock).ServeHTTP(response, request)
+	//получаем результат
+	//
+	//get result
+	fmt.Println(response.Code)
+	fmt.Println(response.Body.String())
+	//Output: 200
+	//10
+}

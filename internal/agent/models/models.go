@@ -1,3 +1,7 @@
+//Package models реализует модели данных.
+//
+// Package models implements data models.
+
 package models
 
 type Metric struct {

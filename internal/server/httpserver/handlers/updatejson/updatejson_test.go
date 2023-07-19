@@ -3,6 +3,7 @@ package updatejson
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -81,4 +82,52 @@ func TestHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Example() {
+	//создаем тестовый объект
+	//
+	//create a test object
+	gauge := float64(10)
+	metric := models.Metric{
+		MType: "gauge",
+		ID:    "testKey",
+		Value: &gauge,
+	}
+	//маршаллизируем его в json
+	//
+	//marshal it to json
+	body, _ := json.Marshal(metric)
+	//создаем тестовую структуру
+	//
+	//create a test structure
+	t := &testing.T{}
+	//создаем моковый объект базы данных
+	//
+	//create a mock database object
+	updaterMock := mocks.NewUpdater(t)
+	updaterMock.On("SetGauge", metric.ID, gauge).Return(nil)
+	//создаем логгер
+	//
+	//create a logger
+	logger := zaptest.NewLogger(t)
+	//создаем запрос и стуктуру обработки ответа
+	//
+	//create a request and response handling structure
+	request := httptest.NewRequest(http.MethodPost, "/update/", bytes.NewBuffer(body))
+	response := httptest.NewRecorder()
+	//вызываем обработчик
+	//
+	//call the handler
+	Handler(logger, updaterMock).ServeHTTP(response, request)
+	//выводим результаты
+	//
+	//output the results
+	fmt.Println(response.Code)
+	fmt.Println(response.Body.String())
+
+	// Output:
+	// 200
+	// {"id":"testKey","type":"gauge","value":10}
+
 }

@@ -1,3 +1,8 @@
+// Package updatejson содержит в себе http.Handler, который обновляет метрику в JSON и возвращает "ok" в случае успеха.
+// также данный хендлер используется для получения метрики из хранилища в формате JSON
+//
+// package updatejson contains an http.Handler that updates the metric in JSON and returns "ok" if successful.
+// It is also used to get the metric from the store in JSON format.
 package updatejson
 
 import (
@@ -9,6 +14,9 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/models"
 )
 
+// Updater это интерфейс, который обновляет метрику.
+// также данный интерфейс используется для получения метрики из хранилища
+//
 //go:generate mockery --name Updater --output ./mocks --filename mocks_updatejson.go
 type Updater interface {
 	SetGauge(name string, value float64)
@@ -17,8 +25,12 @@ type Updater interface {
 	GetGauge(name string) (value float64, err error)
 }
 
+// Handler возвращает http.HandlerFunc, который обрабатывает POST запросы и обновляет метрику в JSON.
+// Он записывает актуальное значение в тело ответа, если обновление прошло успешно.
+// В противном случае возвращает внутреннюю ошибку сервера.
+//
 // Handler returns a http.HandlerFunc that handles POST requests and updates the metric in JSON.
-// It writes "ok" to the response body if the update is successful.
+// It writes the updated value to the response body if the update is successful.
 // Otherwise, it returns an internal server error.
 func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
