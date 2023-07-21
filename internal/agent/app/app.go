@@ -7,7 +7,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	_ "net/http/pprof"
 	"sync"
 	"syscall"
@@ -20,7 +19,6 @@ import (
 	hash2 "github.com/h2p2f/practicum-metrics/internal/agent/hash"
 	"github.com/h2p2f/practicum-metrics/internal/agent/httpclient"
 	"github.com/h2p2f/practicum-metrics/internal/agent/storage"
-	"github.com/h2p2f/practicum-metrics/internal/logger"
 )
 
 // SendOneMetric отправляет метрики на сервер в пуле воркеров по одной метрике за раз
@@ -81,15 +79,7 @@ func getGopsUtilMetrics(m *storage.MetricStorage, pool time.Duration) {
 // Run запускает агент
 //
 // Run launches the agent
-func Run() {
-	// инициализируем логгер
-	// initialize logger
-	if err := logger.InitLogger("info"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	logger.Log.Info("Starting agent...")
-	logger.Log.Info("Reading config...")
+func Run(logger *zap.Logger) {
 	// читаем конфиг
 	// read config
 	conf := config.GetConfig()
@@ -106,7 +96,7 @@ func Run() {
 		msg := "key is presented"
 		fields = append(fields, zap.String("key", msg))
 	}
-	logger.Log.Info("Config loaded", fields...)
+	logger.Info("Config loaded", fields...)
 	// инициализируем хранилище
 	// initialize storage
 	memDB := storage.NewAgentStorage()
@@ -134,7 +124,7 @@ func Run() {
 			// start workers
 			for w := 1; w <= conf.RateLimit; w++ {
 				wg.Add(1)
-				go SendOneMetric(logger.Log, conf, jobs, done)
+				go SendOneMetric(logger, conf, jobs, done)
 			}
 			// отправляем метрики в канал
 			// send metrics to channel
@@ -172,9 +162,9 @@ func Run() {
 			}
 			// отправляем метрики
 			// send metrics
-			err := httpclient.SendBatchJSONMetrics(logger.Log, conf, data, hash)
+			err := httpclient.SendBatchJSONMetrics(logger, conf, data, hash)
 			if err != nil {
-				logger.Log.Sugar().Errorf("Error sending metrics: %s", err)
+				logger.Error("Error sending metrics: ", zap.Error(err))
 			}
 		}
 	}

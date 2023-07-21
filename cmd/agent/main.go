@@ -8,12 +8,19 @@
 package main
 
 import (
-	"github.com/h2p2f/practicum-metrics/internal/agent/app"
+	"fmt"
+	"github.com/h2p2f/practicum-metrics/internal/agent/app" //nolint:typecheck
+	"github.com/h2p2f/practicum-metrics/internal/logger"
 )
 
 // Запуск агента
 //
 // Agent start
 func main() {
-	app.Run()
+	if err := logger.InitLogger("info"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	app.Run(logger.Log)
 }
