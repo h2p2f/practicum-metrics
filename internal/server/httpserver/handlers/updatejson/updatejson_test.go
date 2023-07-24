@@ -131,3 +131,93 @@ func Example() {
 	// {"id":"testKey","type":"gauge","value":10}
 
 }
+
+func BenchmarkHandler(b *testing.B) {
+	//создаем тестовый объект
+	//
+	//create a test object
+	gauge := float64(10)
+	metric := models.Metric{
+		MType: "gauge",
+		ID:    "testKey",
+		Value: &gauge,
+	}
+	//маршаллизируем его в json
+	//
+	//marshal it to json
+	body, _ := json.Marshal(metric)
+	//создаем тестовую структуру
+	//
+	//create a test structure
+	t := &testing.T{}
+	//создаем моковый объект базы данных
+	//
+	//create a mock database object
+	updaterMock := mocks.NewUpdater(t)
+	updaterMock.On("SetGauge", metric.ID, gauge).Return(nil)
+	//создаем логгер
+	//
+	//create a logger
+	logger := zaptest.NewLogger(t)
+	//создаем запрос и стуктуру обработки ответа
+	//
+	//create a request and response handling structure
+	request := httptest.NewRequest(http.MethodPost, "/update/", bytes.NewBuffer(body))
+	response := httptest.NewRecorder()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	//вызываем обработчик
+	//
+	//call the handler
+	for i := 0; i < b.N; i++ {
+		Handler(logger, updaterMock).ServeHTTP(response, request)
+	}
+}
+
+func BenchmarkHandlerParallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		//создаем тестовый объект
+		//
+		//create a test object
+		gauge := float64(10)
+		metric := models.Metric{
+			MType: "gauge",
+			ID:    "testKey",
+			Value: &gauge,
+		}
+		//маршаллизируем его в json
+		//
+		//marshal it to json
+		body, _ := json.Marshal(metric)
+		//создаем тестовую структуру
+		//
+		//create a test structure
+		t := &testing.T{}
+		//создаем моковый объект базы данных
+		//
+		//create a mock database object
+		updaterMock := mocks.NewUpdater(t)
+		updaterMock.On("SetGauge", metric.ID, gauge).Return(nil)
+		//создаем логгер
+		//
+		//create a logger
+		logger := zaptest.NewLogger(t)
+		//создаем запрос и стуктуру обработки ответа
+		//
+		//create a request and response handling structure
+		request := httptest.NewRequest(http.MethodPost, "/update/", bytes.NewBuffer(body))
+		response := httptest.NewRecorder()
+
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		for pb.Next() {
+			//вызываем обработчик
+			//
+			//call the handler
+			Handler(logger, updaterMock).ServeHTTP(response, request)
+		}
+	})
+}

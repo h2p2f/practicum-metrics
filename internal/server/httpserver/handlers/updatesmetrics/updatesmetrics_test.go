@@ -128,3 +128,109 @@ func Example() {
 	// Output:
 	// 200
 }
+
+func BenchmarkHandler(b *testing.B) {
+	//объявляем тестовые переменные
+	//
+	//declare test variables
+	var gauge = 0.001
+	var counter int64 = 10
+	//создаем тестовый объект
+	//
+	//create test object
+	t := &testing.T{}
+	//создаем моки
+	//
+
+	updatersMock := mocks.NewUpdater(t)
+	updatersMock.On("SetGauge", "testKey", gauge).Return(nil)
+	updatersMock.On("SetCounter", "testKey", counter).Return(nil)
+	//создаем логгер
+	//
+	//create logger
+	logger := zaptest.NewLogger(t)
+	//создаем слайс метрик и маршалим его в json
+	//
+	//create metrics slice and marshal it to json
+	metrics := []models.Metric{
+		{
+			ID:    "testKey",
+			MType: "gauge",
+			Value: &gauge,
+		}, {
+			ID:    "testKey",
+			MType: "counter",
+			Delta: &counter,
+		},
+	}
+	body, _ := json.Marshal(metrics)
+	//создаем запрос, записываем в него тело и обявляем объект ответа
+	//
+	//create request, write body to it and declare response object
+	request := httptest.NewRequest(http.MethodPost, "/updates/", bytes.NewBuffer(body))
+	response := httptest.NewRecorder()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	//вызываем обработчик
+	//
+	//call handler
+	for i := 0; i < b.N; i++ {
+		Handler(logger, updatersMock).ServeHTTP(response, request)
+
+	}
+}
+
+func BenchmarkHandlerParallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		//объявляем тестовые переменные
+		//
+		//declare test variables
+		var gauge = 0.001
+		var counter int64 = 10
+		//создаем тестовый объект
+		//
+		//create test object
+		t := &testing.T{}
+		//создаем моки
+		//
+
+		updatersMock := mocks.NewUpdater(t)
+		updatersMock.On("SetGauge", "testKey", gauge).Return(nil)
+		updatersMock.On("SetCounter", "testKey", counter).Return(nil)
+		//создаем логгер
+		//
+		//create logger
+		logger := zaptest.NewLogger(t)
+		//создаем слайс метрик и маршалим его в json
+		//
+		//create metrics slice and marshal it to json
+		metrics := []models.Metric{
+			{
+				ID:    "testKey",
+				MType: "gauge",
+				Value: &gauge,
+			}, {
+				ID:    "testKey",
+				MType: "counter",
+				Delta: &counter,
+			},
+		}
+		body, _ := json.Marshal(metrics)
+		//создаем запрос, записываем в него тело и обявляем объект ответа
+		//
+		//create request, write body to it and declare response object
+		request := httptest.NewRequest(http.MethodPost, "/updates/", bytes.NewBuffer(body))
+		response := httptest.NewRecorder()
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		//вызываем обработчик
+		//
+		//call handler
+		for pb.Next() {
+			Handler(logger, updatersMock).ServeHTTP(response, request)
+		}
+	})
+}
