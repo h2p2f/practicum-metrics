@@ -21,9 +21,9 @@ import (
 //
 // MetricStorage stores metrics in memory.
 type MetricStorage struct {
-	mut     sync.RWMutex
 	gauge   map[string]float64
 	counter map[string]int64
+	mut     sync.RWMutex
 }
 
 // NewAgentStorage создает новое хранилище метрик.

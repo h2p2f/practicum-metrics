@@ -13,10 +13,10 @@ import (
 )
 
 type memStorage struct {
-	mut      sync.RWMutex
+	logger   *zap.Logger
 	gauges   map[string]float64
 	counters map[string]int64
-	logger   *zap.Logger
+	mut      sync.RWMutex
 }
 
 // NewMemStorage создает новый экземпляр memStorage.

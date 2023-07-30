@@ -21,4 +21,5 @@ func Compress(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+	//os.Exit(0)
 }

@@ -65,8 +65,8 @@ func HashMiddleware(log *zap.Logger, key string) func(next http.Handler) http.Ha
 			checkSum := r.Header.Get("HashSHA256")
 			if checkSum != "" && key != "" {
 				log.Info("checkSum", zap.String("checkSum", checkSum))
-				ok, err := checkDataHash(checkSum, key, buf.Bytes())
-				if err != nil {
+				ok, err2 := checkDataHash(checkSum, key, buf.Bytes())
+				if err2 != nil {
 					http.Error(w, "Bad request", http.StatusBadRequest)
 					return
 				}

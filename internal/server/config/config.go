@@ -19,9 +19,9 @@ import (
 type ServerConfig struct {
 	LogLevel string            `yaml:"log_level"`
 	Address  string            `yaml:"host"`
-	File     FileStorageConfig `yaml:"file_storage"`
-	DB       DatabaseConfig    `yaml:"database"`
 	Key      string            `yaml:"key"`
+	DB       DatabaseConfig    `yaml:"database"`
+	File     FileStorageConfig `yaml:"file_storage"`
 }
 
 // FileStorageConfig - структура конфигурации файлового хранилища
@@ -54,8 +54,8 @@ func GetConfig() *ServerConfig {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			log.Println(err)
+		if err2 := file.Close(); err2 != nil {
+			log.Println(err2)
 		}
 	}()
 	decoder := yaml.NewDecoder(file)

@@ -104,9 +104,9 @@ func (pg *pg) GetCounters() map[string]int64 {
 		}
 	}
 	defer func() {
-		err := rows.Close()
-		if err != nil {
-			pg.logger.Sugar().Errorf("Error closing rows: %v", err)
+		err2 := rows.Close()
+		if err2 != nil {
+			pg.logger.Sugar().Errorf("Error closing rows: %v", err2)
 		}
 	}()
 	counters := make(map[string]int64)
@@ -146,9 +146,9 @@ func (pg *pg) GetGauges() map[string]float64 {
 		}
 	}
 	defer func() {
-		err := rows.Close()
-		if err != nil {
-			pg.logger.Sugar().Errorf("Error closing rows: %v", err)
+		err2 := rows.Close()
+		if err2 != nil {
+			pg.logger.Sugar().Errorf("Error closing rows: %v", err2)
 		}
 	}()
 	gauges := make(map[string]float64)

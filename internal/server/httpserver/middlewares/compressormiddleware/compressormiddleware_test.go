@@ -8,12 +8,12 @@ import (
 
 func TestZipMiddleware(t *testing.T) {
 	type want struct {
-		statusCode      int
 		contentType     string
 		headerContent   string
 		jsonString      string
 		acceptEncoding  string
 		contentEncoding string
+		statusCode      int
 	}
 	tests := []struct {
 		name string

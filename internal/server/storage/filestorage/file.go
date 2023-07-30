@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"context"
 	"os"
-	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -17,11 +16,12 @@ import (
 //
 // FileDB - a structure that describes a metric store in a file.
 type FileDB struct {
+	logger   *zap.Logger
 	File     *os.File
 	FilePath string
 	Interval time.Duration
-	mut      sync.RWMutex
-	logger   *zap.Logger
+	//mut      sync.RWMutex
+
 }
 
 // NewFileDB - конструктор для FileDB.
@@ -42,8 +42,8 @@ func (f *FileDB) Write(ctx context.Context, metrics [][]byte) error {
 	var err error
 	f.File, err = os.OpenFile(f.FilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	defer func() {
-		if err := f.File.Close(); err != nil {
-			f.logger.Sugar().Fatalf("error while closing file on write: %s", err)
+		if err2 := f.File.Close(); err2 != nil {
+			f.logger.Sugar().Fatalf("error while closing file on write: %s", err2)
 		}
 	}()
 	if err != nil {
@@ -70,8 +70,8 @@ func (f *FileDB) Read(ctx context.Context) ([][]byte, error) {
 	}
 	f.File, err = os.OpenFile(f.FilePath, os.O_RDONLY, 0755)
 	defer func() {
-		if err := f.File.Close(); err != nil {
-			f.logger.Sugar().Errorf("error while closing file on read: %s", err)
+		if err2 := f.File.Close(); err2 != nil {
+			f.logger.Sugar().Errorf("error while closing file on read: %s", err2)
 		}
 	}()
 	if err != nil {

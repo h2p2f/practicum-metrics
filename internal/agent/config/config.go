@@ -21,10 +21,10 @@ import (
 // AgentConfig - a structure that describes the agent configuration.
 type AgentConfig struct {
 	ServerAddress  string        `yaml:"server"`
-	ReportInterval time.Duration `yaml:"report"`
-	PollInterval   time.Duration `yaml:"poll"`
 	Key            string        `yaml:"key"`
 	RateLimit      int           `yaml:"rate_limit"`
+	ReportInterval time.Duration `yaml:"report"`
+	PollInterval   time.Duration `yaml:"poll"`
 }
 
 // GetConfig - функция, возвращающая конфигурацию агента.
@@ -39,8 +39,8 @@ func GetConfig() *AgentConfig {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			log.Println(err)
+		if err2 := file.Close(); err2 != nil {
+			log.Println(err2)
 		}
 	}()
 	decoder := yaml.NewDecoder(file)

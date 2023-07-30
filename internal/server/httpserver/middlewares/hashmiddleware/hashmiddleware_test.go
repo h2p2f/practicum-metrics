@@ -15,8 +15,8 @@ func TestHashMiddleware(t *testing.T) {
 	tests := []struct {
 		name     string
 		key      string
-		body     []byte
 		checkSum string
+		body     []byte
 		expected int
 	}{
 		{

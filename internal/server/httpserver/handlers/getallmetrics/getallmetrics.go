@@ -55,9 +55,9 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 
 		// Write the counters to the response writer
 		for k, v := range counters {
-			_, err := w.Write([]byte(fmt.Sprintf("<p> %s: %d</p>", k, v)))
-			if err != nil {
-				logger.Error("could not write response", zap.Error(err))
+			_, err2 := w.Write([]byte(fmt.Sprintf("<p> %s: %d</p>", k, v)))
+			if err2 != nil {
+				logger.Error("could not write response", zap.Error(err2))
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
