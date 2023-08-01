@@ -107,12 +107,12 @@
 package main
 
 import (
+	"golang.org/x/tools/go/analysis/unitchecker"
 	"strings"
 
 	"4d63.com/gochecknoglobals/checknoglobals"
 	"github.com/alexkohler/nakedret/v2"
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/assign"
 	"golang.org/x/tools/go/analysis/passes/atomic"
 	"golang.org/x/tools/go/analysis/passes/atomicalign"
@@ -219,7 +219,10 @@ func main() {
 	// Add checknoglobals analyzer
 	analyzers = append(analyzers, checknoglobals.Analyzer())
 	// Запускаем анализаторы
-	multichecker.Main(
+	//multichecker.Main(
+	//	analyzers...,
+	//)
+	unitchecker.Main(
 		analyzers...,
 	)
 
