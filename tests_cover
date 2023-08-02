@@ -1,8 +1,10 @@
+github.com/h2p2f/practicum-metrics/cmd/staticlint/main.go:158:									main			0.0%
+github.com/h2p2f/practicum-metrics/cmd/staticlint/osexitanalyzer.go:24:								run			76.5%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping/dbping.go:28:					Handler			57.1%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/getallmetrics/getallmetrics.go:30:			Handler			60.0%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/getmetric/getmetric.go:31:				Handler			58.1%
-github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatejson/updatejson.go:35:				Handler			43.8%
-github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatemetric/updatemetric.go:33:				Handler			53.8%
+github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatejson/updatejson.go:35:				Handler			50.0%
+github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatemetric/updatemetric.go:33:				Handler			61.5%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/updatesmetrics/updatesmetrics.go:30:			Handler			59.3%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/compressormiddleware/compressormiddleware.go:34:	NewCompressWriter	100.0%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/compressormiddleware/compressormiddleware.go:42:	Header			100.0%
@@ -20,4 +22,4 @@ github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/hashmi
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/hashmiddleware/hashmiddleware.go:110:			Write			0.0%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/hashmiddleware/hashmiddleware.go:118:			WriteHeader		100.0%
 github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/loggermiddleware/loggermiddleware.go:22:		LogMiddleware		100.0%
-total:																(statements)		58.8%
+total:																(statements)		60.0%

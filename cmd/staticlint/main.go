@@ -48,7 +48,7 @@
 // usesgenerics - обнаруживает использование обобщенных функций
 // osexitinmain - обнаруживает использование os.Exit в main
 // nakedret - обнаруживает использование naked return
-// cheknoglobals - обнаруживает использование глобальных переменных
+// rowserr - проверяет, что строки, возвращаемые sql.Rows, закрываются
 //
 //
 // Custom linter based on staticcheck and an extended standard library,
@@ -101,16 +101,16 @@
 // unusedwrite - detects unused results of calls to Write
 // usesgenerics - detects uses of generics
 // osexitinmain - detects os.Exit in main function
-// checknoglobals - detects global variables
+// rowserr -  checks whether sql.Rows.Err is correctly checked
 // nakedret - detects naked returns
 
 package main
 
 import (
-	"golang.org/x/tools/go/analysis/unitchecker"
+	"github.com/jingyugao/rowserrcheck/passes/rowserr"
+	"golang.org/x/tools/go/analysis/multichecker"
 	"strings"
 
-	"4d63.com/gochecknoglobals/checknoglobals"
 	"github.com/alexkohler/nakedret/v2"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/assign"
@@ -215,15 +215,11 @@ func main() {
 	// Добавляем анализатор nakedret
 	// Add nakedret analyzer
 	analyzers = append(analyzers, nakedret.NakedReturnAnalyzer(5))
-	// Добавляем анализатор checknoglobals
-	// Add checknoglobals analyzer
-	analyzers = append(analyzers, checknoglobals.Analyzer())
+	// Добавляем анализатор rowserr
+	// Add rowserr analyzer
+	analyzers = append(analyzers, rowserr.NewAnalyzer("github.com/jmoiron/sqlx"))
 	// Запускаем анализаторы
-	//multichecker.Main(
-	//	analyzers...,
-	//)
-	unitchecker.Main(
+	multichecker.Main(
 		analyzers...,
 	)
-
 }

@@ -16,6 +16,7 @@ import (
 
 func TestHandler(t *testing.T) {
 	tests := []struct {
+		method string
 		name   string
 		metric string
 		key    string
@@ -24,6 +25,7 @@ func TestHandler(t *testing.T) {
 		want   int
 	}{
 		{
+			method: "POST",
 			name:   "Test 1",
 			metric: "gauge",
 			key:    "testKey",
@@ -31,6 +33,7 @@ func TestHandler(t *testing.T) {
 			want:   http.StatusOK,
 		},
 		{
+			method: "POST",
 			name:   "Test 2",
 			metric: "counter",
 			key:    "testKey",
@@ -38,11 +41,28 @@ func TestHandler(t *testing.T) {
 			want:   http.StatusBadRequest,
 		},
 		{
+			method: "POST",
 			name:   "Test 3",
 			metric: "",
 			key:    "testKey",
 			value:  10,
 			want:   http.StatusBadRequest,
+		},
+		{
+			method: "POST",
+			name:   "Test 4",
+			metric: "gauge",
+			key:    "testKey",
+			value:  -10.12,
+			want:   http.StatusBadRequest,
+		},
+		{
+			method: "GET",
+			name:   "Test 5",
+			metric: "gauge",
+			key:    "testKey",
+			value:  10.01,
+			want:   http.StatusMethodNotAllowed,
 		},
 	}
 
@@ -64,15 +84,15 @@ func TestHandler(t *testing.T) {
 			handler := Handler(logger, updaterMock)
 
 			metric := models.Metric{
-				MType: tt.metric,
-				ID:    tt.key,
-				Value: &tt.value,
 				Delta: &tt.delta,
+				Value: &tt.value,
+				ID:    tt.key,
+				MType: tt.metric,
 			}
 
 			body, _ := json.Marshal(metric)
 
-			request := httptest.NewRequest(http.MethodPost, "/update/", bytes.NewBuffer(body))
+			request := httptest.NewRequest(tt.method, "/update/", bytes.NewBuffer(body))
 			response := httptest.NewRecorder()
 
 			handler.ServeHTTP(response, request)
@@ -90,9 +110,9 @@ func Example() {
 	//create a test object
 	gauge := float64(10)
 	metric := models.Metric{
+		Value: &gauge,
 		MType: "gauge",
 		ID:    "testKey",
-		Value: &gauge,
 	}
 	//маршаллизируем его в json
 	//
@@ -128,7 +148,7 @@ func Example() {
 
 	// Output:
 	// 200
-	// {"id":"testKey","type":"gauge","value":10}
+	// {"value":10,"id":"testKey","type":"gauge"}
 
 }
 

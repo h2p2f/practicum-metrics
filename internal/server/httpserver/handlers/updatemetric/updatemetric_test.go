@@ -17,6 +17,7 @@ import (
 func TestUpdateMetric(t *testing.T) {
 
 	tests := []struct {
+		method string
 		name   string
 		metric string
 		key    string
@@ -24,6 +25,7 @@ func TestUpdateMetric(t *testing.T) {
 		want   int
 	}{
 		{
+			method: "POST",
 			name:   "Test 1",
 			metric: "gauge",
 			key:    "testKey",
@@ -31,6 +33,7 @@ func TestUpdateMetric(t *testing.T) {
 			want:   http.StatusOK,
 		},
 		{
+			method: "POST",
 			name:   "Test 2",
 			metric: "counter",
 			key:    "testKey",
@@ -38,11 +41,20 @@ func TestUpdateMetric(t *testing.T) {
 			want:   http.StatusBadRequest,
 		},
 		{
+			method: "POST",
 			name:   "Test 3",
 			metric: "",
 			key:    "testKey",
 			value:  "10",
 			want:   http.StatusNotFound,
+		},
+		{
+			method: "GET",
+			name:   "Test 4",
+			metric: "counter",
+			key:    "testKey",
+			value:  "10",
+			want:   http.StatusMethodNotAllowed,
 		},
 	}
 	for _, tt := range tests {
@@ -65,7 +77,7 @@ func TestUpdateMetric(t *testing.T) {
 			rctx.URLParams.Add("key", tt.key)
 			rctx.URLParams.Add("value", tt.value)
 
-			request := httptest.NewRequest(http.MethodPost, link, nil)
+			request := httptest.NewRequest(tt.method, link, nil)
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			response := httptest.NewRecorder()
 
