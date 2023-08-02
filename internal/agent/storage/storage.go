@@ -36,9 +36,9 @@ func NewAgentStorage() *MetricStorage {
 	}
 }
 
-// RuntimeMetricsMonitor собирает метрики из runtime.
+// RuntimeMetricsMonitor это метод структуры MetricStorage, которая собирает метрики из runtime.
 //
-// RuntimeMetricsMonitor collects metrics from runtime.
+// RuntimeMetricsMonitor is a method of the MetricStorage structure that collects metrics from runtime.
 func (m *MetricStorage) RuntimeMetricsMonitor() {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
@@ -78,9 +78,9 @@ func (m *MetricStorage) RuntimeMetricsMonitor() {
 	m.counter["PollCount"]++
 }
 
-// GopsUtilizationMonitor собирает метрики из gopsutil.
+// GopsUtilizationMonitor это метод структуры MetricStorage, который собирает метрики из gopsutil.
 //
-// GopsUtilizationMonitor collects metrics from gopsutil.
+// GopsUtilizationMonitor is a method of the MetricStorage structure that collects metrics from gopsutil.
 func (m *MetricStorage) GopsUtilizationMonitor() {
 	memory, err := mem.VirtualMemory()
 	if err != nil {
@@ -98,8 +98,12 @@ func (m *MetricStorage) GopsUtilizationMonitor() {
 
 }
 
-// URLMetrics генерирует URL для отправки метрик на сервер.
+// URLMetrics это метод структуры MetricStorage, который генерирует слайс
+// URL-адресов для отправки метрик на сервер.
 // Необходима для обратной совместимости. В данный момент не используется.
+// URLMetrics is a method of the MetricStorage structure that generates a slice of
+// URL addresses to send metrics to the server.
+// Required for backward compatibility. Currently not used.
 func (m *MetricStorage) URLMetrics(host string) []string {
 
 	m.mut.Lock()
@@ -119,10 +123,12 @@ func (m *MetricStorage) URLMetrics(host string) []string {
 	return urls
 }
 
-// JSONMetrics генерирует слайс JSON-объектов для отправки метрик на сервер.
+// JSONMetrics это метод структуры MetricStorage, который генерирует слайс
+// JSON-объектов для отправки метрик на сервер.
 // Необходима для обратной совместимости. В данный момент не используется.
 //
-// JSONMetrics generates a slice of JSON objects to send metrics to the server.
+// JSONMetrics is a method of the MetricStorage structure that generates a slice of
+// JSON objects to send metrics to the server.
 // Required for backward compatibility. Currently not used.
 func (m *MetricStorage) JSONMetrics() [][]byte {
 	var res [][]byte
@@ -160,9 +166,11 @@ func (m *MetricStorage) JSONMetrics() [][]byte {
 	return res
 }
 
-// BatchJSONMetrics генерирует JSON-объект для отправки метрик на сервер.
+// BatchJSONMetrics это метод структуры MetricStorage, который
+// генерирует пакетный JSON-объект для отправки метрик на сервер.
 //
-// BatchJSONMetrics generates a JSON object to send metrics to the server.
+// BatchJSONMetrics is a method of the MetricStorage structure that generates
+// a batch JSON object to send metrics to the server.
 func (m *MetricStorage) BatchJSONMetrics() []byte {
 	var res []byte
 	var modelSlice []models.Metric

@@ -2,11 +2,13 @@ package dbping
 
 import (
 	"fmt"
-	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping/mocks"
-	"go.uber.org/zap/zaptest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/zap/zaptest"
+
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping/mocks"
 )
 
 func Example() {
