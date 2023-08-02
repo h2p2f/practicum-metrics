@@ -38,6 +38,8 @@ agent - это агент, который отправляет runtime метр�
 - iter 16 - добавлены бенчмарк тесты для хендлеров сервера. Добавлены эндпоинты для pprof, проанализирован код и выполнена его оптимизация. Diff находится в файле ```profiles/diff.pprof```
 - iter 17 - код отформатирован при помощи gofmt и goimports
 - iter 18 - Написана документация для каждого пакета, для хендлеров - с примерами использования
+- iter 19 - написан кастомный линтер, проверяющий использование os.Exit() в main функциях
+- iter 20 - добавлены переменные для версионирования приложения при сборке
 
 --------------------
 
@@ -75,6 +77,8 @@ agent - is an agent that sends runtime metrics to the server.
 - iter 16 - added benchmark tests for server handlers. Added endpoints for pprof, analyzed the code and optimized it. Diff is in the file ```profiles/diff.pprof```
 - iter 17 - code formatted with gofmt and goimports
 - iter 18 - Documentation written for each package, for handlers - with examples of use
+- iter 19 - written custom linter that checks the use of os.Exit() in main functions
+- iter 20 - added variables for application versioning at build
 
 
 
