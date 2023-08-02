@@ -2,10 +2,11 @@ package hashmiddleware
 
 import (
 	"bytes"
-	"go.uber.org/zap/zaptest"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/zap/zaptest"
 )
 
 func TestHashMiddleware(t *testing.T) {

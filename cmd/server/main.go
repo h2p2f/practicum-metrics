@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/h2p2f/practicum-metrics/internal/server/app"
 ) //nolint:typecheck
 

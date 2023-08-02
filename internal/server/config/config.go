@@ -5,12 +5,13 @@ package config
 
 import (
 	"flag"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"strconv"
 	"time"
 	"unicode"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ServerConfig - структура конфигурации сервера

@@ -6,9 +6,10 @@ package main
 import (
 	"go/ast"
 	"go/types"
+	"strings"
+
 	"golang.org/x/tools/go/analysis"
 	"honnef.co/go/tools/go/types/typeutil"
-	"strings"
 )
 
 // osExitInMainAnalyser - анализатор, который проверяет наличие вызова os.Exit() в main модуле.

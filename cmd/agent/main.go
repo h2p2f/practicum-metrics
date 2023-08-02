@@ -9,6 +9,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/h2p2f/practicum-metrics/internal/agent/app" //nolint:typecheck
 	"github.com/h2p2f/practicum-metrics/internal/logger"
 )

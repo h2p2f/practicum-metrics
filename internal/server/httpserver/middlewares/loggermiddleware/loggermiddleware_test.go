@@ -2,12 +2,13 @@ package loggermiddleware
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func TestLogMiddleware(t *testing.T) {

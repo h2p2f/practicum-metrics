@@ -107,12 +107,12 @@
 package main
 
 import (
-	"github.com/jingyugao/rowserrcheck/passes/rowserr"
-	"golang.org/x/tools/go/analysis/multichecker"
 	"strings"
 
 	"github.com/alexkohler/nakedret/v2"
+	"github.com/jingyugao/rowserrcheck/passes/rowserr"
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/assign"
 	"golang.org/x/tools/go/analysis/passes/atomic"
 	"golang.org/x/tools/go/analysis/passes/atomicalign"
