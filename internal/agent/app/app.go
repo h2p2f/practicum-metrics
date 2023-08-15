@@ -39,7 +39,7 @@ func SendOneMetric(logger *zap.Logger, config *config.AgentConfig, mCh <-chan []
 		}
 		// отправляем метрику
 		// send metric
-		err := httpclient.SendMetric(logger, m, hash, config.ServerAddress)
+		err := httpclient.SendMetric(logger, m, hash, config)
 		if err != nil {
 			logger.Error("Error sending metrics: %s",
 				zap.Error(err))
@@ -82,7 +82,7 @@ func getGopsUtilMetrics(m *storage.MetricStorage, pool time.Duration) {
 func Run(logger *zap.Logger) {
 	// читаем конфиг
 	// read config
-	conf := config.GetConfig()
+	conf := config.GetConfig(logger)
 
 	fields := []zapcore.Field{
 		zap.Int("rate limit", conf.RateLimit),

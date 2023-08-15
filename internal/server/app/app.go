@@ -111,8 +111,8 @@ func Run() {
 		fields = append(fields, zap.Bool("restore from file", conf.File.Restore))
 	}
 	logger.Log.Info("Started server", fields...)
-
-	err := http.ListenAndServe(conf.Address, httpserver.MetricRouter(logger.Log, db, conf.Key))
+	//err := http.ListenAndServeTLS(conf.Address, conf.CertFile, conf.KeyFile, httpserver.MetricRouter(logger.Log, db, conf.Key))
+	err := http.ListenAndServe(conf.Address, httpserver.MetricRouter(logger.Log, db, conf))
 	if err != nil {
 		panic(err)
 	}

@@ -36,11 +36,14 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 			return
 		}
 
+		wrappedIFace := NewGetterWithZap(db, logger)
 		// Get the counters from the database
-		counters := db.GetCounters()
+		counters := wrappedIFace.GetCounters()
+		//counters := db.GetCounters()
 
 		// Get the gauges from the database
-		gauges := db.GetGauges()
+		gauges := wrappedIFace.GetGauges()
+		//gauges := db.GetGauges()
 
 		// Set the Content-Type header to text/html
 		w.Header().Add("Content-Type", "text/html")

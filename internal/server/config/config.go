@@ -4,6 +4,9 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"flag"
 	"log"
 	"os"
@@ -18,11 +21,13 @@ import (
 //
 // ServerConfig - server configuration structure
 type ServerConfig struct {
-	LogLevel string            `yaml:"log_level"`
-	Address  string            `yaml:"host"`
-	Key      string            `yaml:"key"`
-	DB       DatabaseConfig    `yaml:"database"`
-	File     FileStorageConfig `yaml:"file_storage"`
+	LogLevel   string            `yaml:"log_level"`
+	Address    string            `yaml:"host"`
+	Key        string            `yaml:"key"`
+	KeyFile    string            `yaml:"key_file"`
+	DB         DatabaseConfig    `yaml:"database"`
+	File       FileStorageConfig `yaml:"file_storage"`
+	PrivateKey *rsa.PrivateKey
 }
 
 // FileStorageConfig - структура конфигурации файлового хранилища
@@ -65,21 +70,21 @@ func GetConfig() *ServerConfig {
 		log.Fatal(err)
 	}
 
-	config = &ServerConfig{
-		LogLevel: "info",
-		Address:  "localhost:8080",
-		File: FileStorageConfig{
-			Path:          "/tmp/metrics-db.json",
-			StoreInterval: 10 * time.Second,
-			Restore:       true,
-			UseFile:       false,
-		},
-		DB: DatabaseConfig{
-			Dsn:   "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-			UsePG: false,
-		},
-		Key: "secret",
-	}
+	//config = &ServerConfig{
+	//	LogLevel: "info",
+	//	Address:  "localhost:8080",
+	//	File: FileStorageConfig{
+	//		Path:          "/tmp/metrics-db.json",
+	//		StoreInterval: 10 * time.Second,
+	//		Restore:       true,
+	//		UseFile:       false,
+	//	},
+	//	DB: DatabaseConfig{
+	//		Dsn:   "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+	//		UsePG: false,
+	//	},
+	//	Key: "secret",
+	//}
 
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)
 	fs.StringVar(&config.Address, "a", config.Address, "Server address")
@@ -128,6 +133,21 @@ func GetConfig() *ServerConfig {
 	}
 	if envKey := os.Getenv("KEY"); envKey != "" {
 		config.Key = envKey
+	}
+	if config.KeyFile != "" {
+		data, err := os.ReadFile(config.KeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		block, _ := pem.Decode(data)
+		if block == nil {
+			log.Fatal("failed to parse PEM block containing the key")
+		}
+		config.PrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//log.Println("PrivateKey loaded from file")
 	}
 	return config
 

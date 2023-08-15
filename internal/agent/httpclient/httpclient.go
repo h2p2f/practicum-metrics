@@ -4,6 +4,8 @@
 package httpclient
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -65,18 +67,25 @@ func SendJSONMetrics(logger *zap.Logger, data [][]byte, addr string) error {
 //
 // SendBatchJSONMetrics sends metrics to the server in JSON format in batch mode.
 func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data []byte, checkSum [32]byte) error {
-	zipped, err := compressor.Compress(data)
+	toSend, err := compressor.Compress(data)
 	if err != nil {
 		return err
 	}
 	//fmt.Println(fmt.Sprintf("%x", hash))
 	hash := fmt.Sprintf("%x", checkSum)
+	if config.PublicKey == nil {
+		toSend, err = rsa.EncryptPKCS1v15(rand.Reader, config.PublicKey, toSend)
+		if err != nil {
+			return err
+		}
+	}
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
+		SetHeader("Content-Encoding", "gzip").
 		SetHeaderVerbatim("HashSHA256", fmt.Sprintf("%x", hash)).
-		SetBody(zipped).
+		SetBody(toSend).
 		Post("http://" + config.ServerAddress + "/updates/")
 	if err != nil {
 		return err
@@ -89,20 +98,26 @@ func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data [
 // SendMetric отправляет метрику на сервер. Используется воркерами.
 //
 // SendMetric sends a metric to the server. Used by workers.
-func SendMetric(logger *zap.Logger, data []byte, checkSum [32]byte, address string) error {
-	zipped, err := compressor.Compress(data)
+func SendMetric(logger *zap.Logger, data []byte, checkSum [32]byte, config *config.AgentConfig) error {
+	toSend, err := compressor.Compress(data)
 	if err != nil {
 		return err
 	}
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second)
 	hash := fmt.Sprintf("%x", checkSum)
+	if config.PublicKey != nil {
+		toSend, err = rsa.EncryptPKCS1v15(rand.Reader, config.PublicKey, toSend)
+		if err != nil {
+			return err
+		}
+	}
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
 		SetHeaderVerbatim("HashSHA256", hash).
-		SetBody(zipped).
-		Post("http://" + address + "/update/")
+		SetBody(toSend).
+		Post("http://" + config.ServerAddress + "/update/")
 	if err != nil {
 		return err
 	}

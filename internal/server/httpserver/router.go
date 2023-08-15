@@ -6,6 +6,8 @@ package httpserver
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/decryptormiddleware"
 	"go.uber.org/zap"
 
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping"
@@ -49,17 +51,18 @@ func NewDataBase(db DataBaser) *DataBase {
 // MetricRouter - конструктор для роутера.
 //
 // MetricRouter is a constructor for the router.
-func MetricRouter(logger *zap.Logger, m DataBaser, key string) *chi.Mux {
+func MetricRouter(logger *zap.Logger, m DataBaser, config *config.ServerConfig) *chi.Mux {
 	db := NewDataBase(m)
 	r := chi.NewRouter()
 	//регистрация middleware
 	//
 	// middleware registration
+	r.Use(decryptormiddleware.DecryptMiddleware(config.PrivateKey))
 	r.Use(loggermiddleware.LogMiddleware(logger))
 	r.Use(compressormiddleware.ZipMiddleware)
 
-	if key != "" {
-		r.Use(hashmiddleware.HashMiddleware(logger, key))
+	if config.Key != "" {
+		r.Use(hashmiddleware.HashMiddleware(logger, config.Key))
 	}
 	//регистрация профайлера
 	//

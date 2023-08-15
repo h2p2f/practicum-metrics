@@ -1,5 +1,6 @@
 server: localhost:8080
 poll: 2s
 report: 10s
-key: secret
+key: key
 rate_limit: 2
+key_file: ./crypto/public.rsa

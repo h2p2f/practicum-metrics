@@ -8,4 +8,5 @@ file_storage:
 database:
   dsn: postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable
   use_pg: false
-key: secret
+key: key
+key_file: ./crypto/private.rsa
