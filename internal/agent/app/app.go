@@ -112,7 +112,7 @@ func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 	go getRuntimeMetrics(memDB, conf.PollInterval)
 	go getGopsUtilMetrics(memDB, conf.PollInterval)
 	ctx, cancel := context.WithCancel(context.Background()) //nolint:govet
-
+	defer cancel()
 	// запускаем отправку метрик на сервер в зависимости от наличия лимита
 	// start sending metrics to the server depending on the limit
 	if conf.RateLimit > 0 {
@@ -132,7 +132,7 @@ func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 		cancel()
 		logger.Info("Agent shutdown gracefully")
 		close(connectionsClosed)
-		return
+		return //nolint:govet
 	}
 	// ждем завершения воркеров
 	// wait for workers to finish

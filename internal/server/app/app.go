@@ -153,7 +153,7 @@ func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 		cancel()
 		logger.Info("Server shutdown gracefully")
 		close(connectionsClosed)
-		return
+		return //nolint:govet
 	}
 
 }

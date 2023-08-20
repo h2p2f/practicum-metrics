@@ -25,7 +25,7 @@ func isSet(fs *flag.FlagSet, name string) bool {
 // flagLoader - function of loading configuration from flags
 func (config *AgentConfig) flagLoader() {
 	config.Logger.Debug("Loading config from flags")
-	useJsonConfig := false
+	useJSONConfig := false
 	var jsonConfigPath string
 	jsonConfFS := flag.NewFlagSet("json", flag.ContinueOnError)
 	jsonConfFS.StringVar(&jsonConfigPath, "c", "./config/agent.json", "config file")
@@ -35,13 +35,13 @@ func (config *AgentConfig) flagLoader() {
 		log.Println(err)
 	}
 	if isSet(jsonConfFS, "c") || isSet(jsonConfFS, "config") {
-		useJsonConfig = true
+		useJSONConfig = true
 	}
 	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
-		useJsonConfig = true
+		useJSONConfig = true
 		jsonConfigPath = envConfig
 	}
-	if useJsonConfig {
+	if useJSONConfig {
 		jsonFile, err := os.ReadFile(jsonConfigPath)
 		if err != nil {
 			log.Fatal(err)
