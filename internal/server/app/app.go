@@ -138,22 +138,19 @@ func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 	}()
 	// ожидаем сигнал о завершении
 	// wait for done signal
-	for signal := range sigint {
-		logger.Info("Received signal", zap.String("signal", signal.String()))
+	if <-sigint; true {
 		logger.Info("Shutting down server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		if err := srv.Shutdown(ctx); err != nil {
 			logger.Fatal("server shutdown error", zap.Error(err))
 		}
-		// если в конфиге указано использовать postgreSQL - закрываем соединение
-		// if the config specifies to use postgreSQL - close the connection
 		if conf.DB.UsePG {
 			pgDB.Close()
 		}
 		cancel()
 		logger.Info("Server shutdown gracefully")
 		close(connectionsClosed)
-		return //nolint:govet
+		return
 	}
 
 }
