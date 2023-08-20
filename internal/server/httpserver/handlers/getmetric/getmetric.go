@@ -36,6 +36,8 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+
+		wrappedIFace := NewGetterWithZap(db, logger)
 		// Get the metric name and key from the URL parameters.
 		metric := chi.URLParam(r, "metric")
 		key := chi.URLParam(r, "key")
@@ -47,7 +49,7 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 		// Get the metric value from the database.
 		switch metric {
 		case "gauge":
-			value, err := db.GetGauge(key)
+			value, err := wrappedIFace.GetGauge(key)
 			if err != nil {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
@@ -59,7 +61,7 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 				return
 			}
 		case "counter":
-			value, err := db.GetCounter(key)
+			value, err := wrappedIFace.GetCounter(key)
 			if err != nil {
 				http.Error(w, "Not found", http.StatusNotFound)
 

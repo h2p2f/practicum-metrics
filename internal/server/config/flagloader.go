@@ -7,9 +7,9 @@ import (
 	"os"
 )
 
-// isSet - функция, проверяющая, установлен ли флаг.
+// isSet - функция проверки наличия флага
 //
-// isSet is a function that checks if the flag is set.
+// isSet - function of checking the presence of a flag
 func isSet(fs *flag.FlagSet, name string) bool {
 	set := false
 	fs.Visit(func(f *flag.Flag) {
@@ -23,7 +23,7 @@ func isSet(fs *flag.FlagSet, name string) bool {
 // flagLoader - функция загрузки конфигурации из флагов
 //
 // flagLoader - function of loading configuration from flags
-func (config *AgentConfig) flagLoader() {
+func (config *ServerConfig) flagLoader() {
 	config.Logger.Debug("Loading config from flags")
 	useJsonConfig := false
 	var jsonConfigPath string
@@ -52,27 +52,28 @@ func (config *AgentConfig) flagLoader() {
 		}
 	}
 
-	fs := flag.NewFlagSet("agent", flag.ContinueOnError)
-	fs.DurationVar(&config.ReportInterval, "r", config.ReportInterval, "Report interval")
-	fs.DurationVar(&config.PollInterval, "p", config.PollInterval, "Poll interval")
-	fs.StringVar(&config.ServerAddress, "a", config.ServerAddress, "Server address")
+	fs := flag.NewFlagSet("server", flag.ContinueOnError)
+	fs.StringVar(&config.Address, "a", config.Address, "Server address")
+	fs.StringVar(&config.File.Path, "f", config.File.Path, "File path")
+	fs.DurationVar(&config.File.StoreInterval, "i", config.File.StoreInterval, "Store interval")
+	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
+	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
 	fs.StringVar(&config.Key, "k", config.Key, "Key")
 	fs.StringVar(&config.KeyFile, "crypto-key", config.KeyFile, "RSA key file")
-	fs.IntVar(&config.RateLimit, "l", config.RateLimit, "Rate limit")
-	// парсим флаги
-	// parse flags
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		log.Println(err)
 	}
-	//если ключ не задан - обнуляем его
-	//if the key is not set - zero it
+	if isSet(fs, "f") {
+		config.File.UseFile = true
+	}
+	if isSet(fs, "d") {
+		config.DB.UsePG = true
+	}
 	if !isSet(fs, "k") {
 		config.Key = ""
 	}
 	if !isSet(fs, "crypto-key") {
 		config.KeyFile = ""
 	}
-
-	config.Logger.Debug("Config loaded from flags")
 }

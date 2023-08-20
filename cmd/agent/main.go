@@ -9,9 +9,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/h2p2f/practicum-metrics/internal/agent/app" //nolint:typecheck
-	"github.com/h2p2f/practicum-metrics/internal/logger"
 )
 
 // переменные для хранения версии, даты и коммита сборки
@@ -28,17 +30,22 @@ var (
 // Запуск агента
 //
 // Agent start
-
 func main() {
-	if err := logger.InitLogger("info"); err != nil {
-		fmt.Println(err)
-		return
-	}
+
 	//вывод информации о версии, дате и коммите сборки
 	//output information about the version, date and commit of the build
 	fmt.Println("Build version:", buildVersion)
 	fmt.Println("Build date:", buildDate)
 	fmt.Println("Build commit:", buildCommit)
-
-	app.Run(logger.Log)
+	//объявляем каналы для обработки сигналов завершения
+	//declare channels for processing shutdown signals
+	sigint := make(chan os.Signal, 1)
+	connectionsClosed := make(chan struct{})
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	//запуск агента
+	//agent start
+	app.Run(sigint, connectionsClosed)
+	//обработка сигнала завершения
+	//shutdown signal processing
+	<-connectionsClosed
 }

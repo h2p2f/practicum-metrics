@@ -38,6 +38,8 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+		wrappedIFace := NewUpdaterWithZap(db, log)
+
 		// Get the metric type, key and value from the URI
 		metric := chi.URLParam(r, "metric")
 		key := chi.URLParam(r, "key")
@@ -70,7 +72,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 				return
 			}
 			// Update the metric
-			db.SetGauge(key, f)
+			wrappedIFace.SetGauge(key, f)
 		case "counter":
 			// Parse the value to int64
 			i, err := strconv.ParseInt(value, 10, 64)
@@ -86,7 +88,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 				return
 			}
 			// Update the metric
-			db.SetCounter(key, i)
+			wrappedIFace.SetCounter(key, i)
 		// If the metric type is unknown, return a bad request
 		default:
 			log.Error("invalid metric type")

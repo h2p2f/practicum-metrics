@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// envLoader - функция загрузки конфигурации из переменных окружения
+// envLoader - function of loading configuration from environment variables
 func (config *AgentConfig) envLoader() {
 	config.Logger.Debug("Loading config from environment variables")
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
@@ -39,7 +41,8 @@ func (config *AgentConfig) envLoader() {
 			config.RateLimit, _ = strconv.Atoi(envRateLimit)
 		}
 	}
-
+	// если путь к ключу задан в переменной окружения - перезаписываем
+	// if the path to the key is set in the environment variable - rewrite
 	if envKryptoKey := os.Getenv("CRYPTO_KEY"); envKryptoKey != "" {
 		config.KeyFile = envKryptoKey
 	}

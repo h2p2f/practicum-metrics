@@ -10,6 +10,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/h2p2f/practicum-metrics/internal/server/app"
 ) //nolint:typecheck
@@ -33,8 +36,18 @@ func main() {
 	fmt.Println("Build version:", buildVersion)
 	fmt.Println("Build date:", buildDate)
 	fmt.Println("Build commit:", buildCommit)
+
+	sigint := make(chan os.Signal, 1)
+	connectionsClosed := make(chan struct{})
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+
 	//запуск сервера
 	//server start
-	app.Run()
+	app.Run(sigint, connectionsClosed)
+
+	//обработка сигнала завершения
+	//shutdown signal processing
+
+	<-connectionsClosed
 
 }

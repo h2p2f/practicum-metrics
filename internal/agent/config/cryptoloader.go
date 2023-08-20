@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// cryptoLoader - функция загрузки крипто ключа
+// cryptoLoader - crypto key loading function
 func (config *AgentConfig) cryptoLoader() {
 
 	if config.KeyFile != "" {
@@ -26,5 +28,8 @@ func (config *AgentConfig) cryptoLoader() {
 			log.Fatal(err)
 		}
 		config.Logger.Debug("Public key loaded")
+	} else {
+		config.Logger.Debug("No public key provided")
+		config.PublicKey = nil
 	}
 }

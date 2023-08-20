@@ -6,8 +6,10 @@
 package app
 
 import (
+	"context"
 	"errors"
 	_ "net/http/pprof"
+	"os"
 	"sync"
 	"syscall"
 	"time"
@@ -79,10 +81,13 @@ func getGopsUtilMetrics(m *storage.MetricStorage, pool time.Duration) {
 // Run запускает агент
 //
 // Run launches the agent
-func Run(logger *zap.Logger) {
+func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 	// читаем конфиг
 	// read config
-	conf := config.GetConfig(logger)
+	conf := config.GetConfig()
+	// достаем логгер из структуры конфига
+	// get logger from config structure
+	logger := conf.Logger
 
 	fields := []zapcore.Field{
 		zap.Int("rate limit", conf.RateLimit),
@@ -106,69 +111,117 @@ func Run(logger *zap.Logger) {
 	wg.Add(2)
 	go getRuntimeMetrics(memDB, conf.PollInterval)
 	go getGopsUtilMetrics(memDB, conf.PollInterval)
+	ctx, cancel := context.WithCancel(context.Background()) //nolint:govet
+
 	// запускаем отправку метрик на сервер в зависимости от наличия лимита
 	// start sending metrics to the server depending on the limit
 	if conf.RateLimit > 0 {
-		for {
-			// ждем интервал
-			// wait for interval
-			time.Sleep(conf.ReportInterval)
-			// получаем метрики из хранилища
-			// get metrics from storage
-			data := memDB.JSONMetrics()
-			// создаем каналы для воркеров
-			// create channels for workers
-			jobs := make(chan []byte, len(data))
-			done := make(chan bool, len(data))
-			// запускаем воркеров
-			// start workers
-			for w := 1; w <= conf.RateLimit; w++ {
-				wg.Add(1)
-				go SendOneMetric(logger, conf, jobs, done)
-			}
-			// отправляем метрики в канал
-			// send metrics to channel
-			for _, metric := range data {
-				jobs <- metric
-			}
-			// закрываем каналы
-			// close channels
-			close(jobs)
-			// ждем завершения воркеров
-			// wait for workers to finish
-			for range data {
-				<-done
-			}
-			// закрываем воркеров
-			// close workers
-			wg.Done()
-		}
+		go sendWithRateLimit(ctx, memDB, conf, logger, &wg)
+	} else {
+		// если лимит не установлен - отправляем метрики пачкой в json на сервер
+		// if the limit is not set - send metrics in batches in json to the server
+		go sendWithoutRateLimit(ctx, memDB, conf, logger)
 	}
-	// если лимит не установлен - отправляем метрики пачкой в json на сервер
-	// if the limit is not set - send metrics in batches in json to the server
-	if conf.RateLimit <= 0 {
-		for {
-			// ждем интервал
-			// wait for interval
-			time.Sleep(conf.ReportInterval)
-			// получаем метрики из хранилища
-			// get metrics from storage
-			data := memDB.BatchJSONMetrics()
-			// считаем хеш
-			// calculate hash
-			var hash [32]byte
-			if conf.Key != "" {
-				hash = hash2.GetHash(conf.Key, data)
-			}
-			// отправляем метрики
-			// send metrics
-			err := httpclient.SendBatchJSONMetrics(logger, conf, data, hash)
-			if err != nil {
-				logger.Error("Error sending metrics: ", zap.Error(err))
-			}
-		}
+	// ждем сигнала о завершении
+	// wait for done signal
+	for signal := range sigint {
+		logger.Info("Received signal", zap.String("signal", signal.String()))
+		logger.Info("Shutting down agent...")
+		// останавливаем отправку метрик
+		// stop sending metrics
+		cancel()
+		logger.Info("Agent shutdown gracefully")
+		close(connectionsClosed)
+		return
 	}
 	// ждем завершения воркеров
 	// wait for workers to finish
 	wg.Wait() //nolint:govet
+}
+
+// sendWithRateLimit отправляет метрики на сервер по одной в пуле горутин, количество
+// которых ограничено параметром RateLimit
+//
+// sendWithRateLimit sends metrics to the server one at a time in a goroutine pool,
+// the number of which is limited by the RateLimit parameter
+func sendWithRateLimit(
+	ctx context.Context,
+	db *storage.MetricStorage,
+	conf *config.AgentConfig,
+	logger *zap.Logger,
+	wg *sync.WaitGroup) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		// ждем интервал
+		// wait for interval
+		time.Sleep(conf.ReportInterval)
+		//очень необходима помощь ментора - без этого хардкода счетчик в
+		//waitgroup через некоторое время становится отрицательным
+		//very necessary help from the mentor - without this hardcode, the counter in
+		//waitgroup after some time becomes negative
+		wg.Add(1)
+		// получаем метрики из хранилища
+		// get metrics from storage
+		data := db.JSONMetrics()
+		// создаем каналы для воркеров
+		// create channels for workers
+		jobs := make(chan []byte, len(data))
+		done := make(chan bool, len(data))
+		// запускаем воркеров
+		// start workers
+		for w := 1; w <= conf.RateLimit; w++ {
+			go SendOneMetric(logger, conf, jobs, done)
+		}
+		// отправляем метрики в канал
+		// send metrics to channel
+		for _, metric := range data {
+			jobs <- metric
+		}
+		// закрываем каналы
+		// close channels
+		close(jobs)
+		// ждем завершения воркеров
+		// wait for workers to finish
+		for range data {
+			<-done
+		}
+		// закрываем воркеров
+		// close workers
+		wg.Done()
+	}
+}
+
+// sendWithoutRateLimit отправляет метрики на сервер пачкой в json
+//
+// sendWithoutRateLimit sends metrics to the server in batches in json
+func sendWithoutRateLimit(
+	ctx context.Context,
+	db *storage.MetricStorage,
+	conf *config.AgentConfig,
+	logger *zap.Logger) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		// ждем интервал
+		// wait for interval
+		time.Sleep(conf.ReportInterval)
+		// получаем метрики из хранилища
+		// get metrics from storage
+		data := db.BatchJSONMetrics()
+		// считаем хеш
+		// calculate hash
+		var hash [32]byte
+		if conf.Key != "" {
+			hash = hash2.GetHash(conf.Key, data)
+		}
+		// отправляем метрики
+		// send metrics
+		err := httpclient.SendBatchJSONMetrics(logger, conf, data, hash)
+		if err != nil {
+			logger.Error("Error sending metrics: ", zap.Error(err))
+		}
+	}
 }

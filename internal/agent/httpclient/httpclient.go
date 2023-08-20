@@ -71,13 +71,16 @@ func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data [
 	if err != nil {
 		return err
 	}
-	//fmt.Println(fmt.Sprintf("%x", hash))
 	hash := fmt.Sprintf("%x", checkSum)
-	if config.PublicKey == nil {
+	if config.PublicKey != nil {
 		toSend, err = rsa.EncryptPKCS1v15(rand.Reader, config.PublicKey, toSend)
 		if err != nil {
 			return err
 		}
+	}
+
+	if err != nil {
+		return err
 	}
 	client := resty.New()
 	resp, err := client.R().

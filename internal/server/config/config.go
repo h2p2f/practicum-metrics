@@ -5,16 +5,12 @@ package config
 
 import (
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"flag"
 	"log"
 	"os"
-	"strconv"
 	"time"
-	"unicode"
 
-	"gopkg.in/yaml.v3"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // ServerConfig - структура конфигурации сервера
@@ -22,21 +18,22 @@ import (
 // ServerConfig - server configuration structure
 type ServerConfig struct {
 	LogLevel   string            `yaml:"log_level"`
-	Address    string            `yaml:"host"`
+	Address    string            `yaml:"host" json:"address"`
 	Key        string            `yaml:"key"`
-	KeyFile    string            `yaml:"key_file"`
+	KeyFile    string            `yaml:"key_file" json:"crypto_key"`
 	DB         DatabaseConfig    `yaml:"database"`
 	File       FileStorageConfig `yaml:"file_storage"`
 	PrivateKey *rsa.PrivateKey
+	Logger     *zap.Logger
 }
 
 // FileStorageConfig - структура конфигурации файлового хранилища
 //
 // FileStorageConfig - file storage configuration structure
 type FileStorageConfig struct {
-	Path          string        `yaml:"path"`
+	Path          string        `yaml:"path" json:"store_file"`
 	StoreInterval time.Duration `yaml:"flush_interval"`
-	Restore       bool          `yaml:"restore"`
+	Restore       bool          `yaml:"restore" json:"restore"`
 	UseFile       bool          `yaml:"use_file"`
 }
 
@@ -44,7 +41,7 @@ type FileStorageConfig struct {
 //
 // DatabaseConfig - database configuration structure
 type DatabaseConfig struct {
-	Dsn   string `yaml:"dsn"`
+	Dsn   string `yaml:"dsn" json:"database_dsn"`
 	UsePG bool   `yaml:"use_pg"`
 }
 
@@ -53,127 +50,44 @@ type DatabaseConfig struct {
 // GetConfig - function of obtaining the server configuration, processes the yaml file, flags and environment variables
 func GetConfig() *ServerConfig {
 
-	var config *ServerConfig
-
-	file, err := os.Open("./config/server.yaml")
+	var config ServerConfig
+	// читаем дефлотный конфиг из yaml файла
+	// read the default config from the yaml file
+	config.yamlLoader()
+	// если уровень логирования info, warn или error
+	//(запуск на проде) - убираем крипто ключ из дефолтной конфигурации
+	// в этом случае подключить его можно флагом запуска
+	// или переменной окружения
+	// if the log level is info, warn or error
+	// (production run) - remove the crypto key from the default configuration
+	// in this case, it can be connected by the launch flag
+	// or environment variable
+	if config.LogLevel == "info" || config.LogLevel == "warn" || config.LogLevel == "error" {
+		config.KeyFile = ""
+	}
+	// конфигурируем логгер
+	// configure logger
+	atom, err := zap.ParseAtomicLevel(config.LogLevel)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		if err2 := file.Close(); err2 != nil {
-			log.Println(err2)
-		}
-	}()
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&config)
-	if err != nil {
-		log.Fatal(err)
-	}
+	config.Logger = zap.New(zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.Lock(os.Stdout),
+		atom))
+	defer config.Logger.Sync() //nolint:errcheck
+	// перезаписываем конфиг флагами командной строки
+	// в данной секции также обрабатывается пользовательский json файл с конфигурацией
+	// overwrite config with command line flags
+	// this section also processes the user json file with configuration
+	config.flagLoader()
+	// перезаписываем конфиг переменными окружения
+	// overwrite config with environment variables
+	config.envLoader()
+	// загружаем крипто ключ
+	// load crypto key
+	config.cryptoLoader()
 
-	//config = &ServerConfig{
-	//	LogLevel: "info",
-	//	Address:  "localhost:8080",
-	//	File: FileStorageConfig{
-	//		Path:          "/tmp/metrics-db.json",
-	//		StoreInterval: 10 * time.Second,
-	//		Restore:       true,
-	//		UseFile:       false,
-	//	},
-	//	DB: DatabaseConfig{
-	//		Dsn:   "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-	//		UsePG: false,
-	//	},
-	//	Key: "secret",
-	//}
+	return &config
 
-	fs := flag.NewFlagSet("server", flag.ContinueOnError)
-	fs.StringVar(&config.Address, "a", config.Address, "Server address")
-	fs.StringVar(&config.File.Path, "f", config.File.Path, "File path")
-	fs.DurationVar(&config.File.StoreInterval, "i", config.File.StoreInterval, "Store interval")
-	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
-	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
-	fs.StringVar(&config.Key, "k", config.Key, "Key")
-	err = fs.Parse(os.Args[1:]) //nolint:errcheck
-	if err != nil {
-		log.Println(err)
-	}
-	if isSet(fs, "f") {
-		config.File.UseFile = true
-	}
-	if isSet(fs, "d") {
-		config.DB.UsePG = true
-	}
-	if !isSet(fs, "k") {
-		config.Key = ""
-	}
-
-	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		config.Address = envAddress
-	}
-	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
-		config.File.Path = envFilePath
-		config.File.UseFile = true
-	}
-	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
-		if isNumeric(envStoreInterval) {
-			envStoreInterval += "s"
-		}
-		config.File.StoreInterval, _ = time.ParseDuration(envStoreInterval)
-	}
-	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
-		envRestore, err := strconv.ParseBool(envRestore)
-		if err != nil {
-			log.Println(err)
-		}
-		config.File.Restore = envRestore
-	}
-	if envDSN := os.Getenv("DATABASE_DSN"); envDSN != "" {
-		config.DB.Dsn = envDSN
-		config.DB.UsePG = true
-	}
-	if envKey := os.Getenv("KEY"); envKey != "" {
-		config.Key = envKey
-	}
-	if config.KeyFile != "" {
-		data, err := os.ReadFile(config.KeyFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		block, _ := pem.Decode(data)
-		if block == nil {
-			log.Fatal("failed to parse PEM block containing the key")
-		}
-		config.PrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-		if err != nil {
-			log.Fatal(err)
-		}
-		//log.Println("PrivateKey loaded from file")
-	}
-	return config
-
-}
-
-// isNumeric - функция проверки строки на наличие в ней только цифр
-//
-// isNumeric - function of checking a string for the presence of only numbers in it
-func isNumeric(s string) bool {
-	for _, c := range s {
-		if !unicode.IsDigit(c) {
-			return false
-		}
-	}
-	return true
-}
-
-// isSet - функция проверки наличия флага
-//
-// isSet - function of checking the presence of a flag
-func isSet(fs *flag.FlagSet, name string) bool {
-	set := false
-	fs.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			set = true
-		}
-	})
-	return set
 }

@@ -10,6 +10,8 @@
 - -r (env: RESTORE) - флаг восстановления метрик из файла при запуске сервера, по умолчанию false
 - -d (env: DATABASE_DSN) - параметр подключения к postgreSQL
 - -k (env: KEY) - ключ для вычисления хеша ответов сервера
+- -crypto-key (env: CRYPTO_KEY) - путь к ключу для шифрования данных
+- -с ( -config, env: CONFIG) - путь к конфигурационному файлу (по умолчанию ./config/config.json)
 
 При запуске сервер загружает все метрики из файла в память при работе с inmemory хранилищем или файлом, при работе с postgreSQL метрики хранятся в только в БД.
 
@@ -57,6 +59,8 @@ On the main page, users can see a list of all metrics that were stored in memory
 - -r (env: RESTORE) - flag to restore metrics from a file when the server starts, default false
 - -d (env: DATABASE_DSN) - postgreSQL connection parameter
 - -k (env: KEY) - key for calculating the hash of server responses
+- -crypto-key (env: CRYPTO_KEY) - path to the key for encrypting data
+- -с ( -config, env: CONFIG) - path to the configuration file (default ./config/config.json)
 
 Upon start-up, the server loads all metrics from the file into memory when working with inmemory storage or a file, when working with postgreSQL, metrics are stored only in the database.
 

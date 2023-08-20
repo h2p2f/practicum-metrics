@@ -1,4 +1,4 @@
-log_level: info
+log_level: debug
 host: localhost:8080
 file_storage:
   path: /tmp/metrics-db.json

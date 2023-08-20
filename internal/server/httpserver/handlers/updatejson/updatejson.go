@@ -40,6 +40,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+		wrappedIFace := NewUpdaterWithZap(db, log)
 		// Create a new metric struct
 		var metric models.Metric
 		// Decode the JSON request body into the metric struct
@@ -73,11 +74,11 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 			{
 				switch metric.MType {
 				case "gauge":
-					db.SetGauge(metric.ID, *metric.Value)
+					wrappedIFace.SetGauge(metric.ID, *metric.Value)
 				case "counter":
 					{
-						db.SetCounter(metric.ID, *metric.Delta)
-						*metric.Delta, _ = db.GetCounter(metric.ID)
+						wrappedIFace.SetCounter(metric.ID, *metric.Delta)
+						*metric.Delta, _ = wrappedIFace.GetCounter(metric.ID)
 					}
 				default:
 					http.Error(w, "Bad request", http.StatusBadRequest)
@@ -90,12 +91,12 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 				switch metric.MType {
 				case "gauge":
 					{
-						n, _ := db.GetGauge(metric.ID)
+						n, _ := wrappedIFace.GetGauge(metric.ID)
 						metric.Value = &n
 					}
 				case "counter":
 					{
-						n, _ := db.GetCounter(metric.ID)
+						n, _ := wrappedIFace.GetCounter(metric.ID)
 						metric.Delta = &n
 					}
 				}

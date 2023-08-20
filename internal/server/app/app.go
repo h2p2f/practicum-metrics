@@ -11,15 +11,15 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/h2p2f/practicum-metrics/internal/logger"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/filestorage"
@@ -45,46 +45,56 @@ type DataBaser interface {
 // Run запускает приложение
 //
 // Run starts the application
-func Run() {
-
+func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
+	// читаем конфигурацию
+	// read configuration
 	conf := config.GetConfig()
+	//достаем логгер из структуры конфига
 
-	if err := logger.InitLogger(conf.LogLevel); err != nil {
-		fmt.Println(err)
-		return
-	}
+	logger := conf.Logger
 
 	ctx := context.Background()
-
-	memDB := inmemorystorage.NewMemStorage(logger.Log)
-
+	// создаем хранилище в памяти
+	// create inmemory storage
+	memDB := inmemorystorage.NewMemStorage(logger)
+	// присваиваем переменной db хранилище в памяти
+	// assign the db variable to the inmemory storage
 	var db DataBaser = memDB
-
-	file := filestorage.NewFileDB(conf.File.Path, conf.File.StoreInterval, logger.Log)
-
-	pgDB := postgrestorage.NewPostgresDB(conf.DB.Dsn, logger.Log)
+	// инициализируем хранилище в файле
+	// initialize file storage
+	file := filestorage.NewFileDB(conf.File.Path, conf.File.StoreInterval, logger)
+	// создаем хранилище в postgreSQL
+	// create postgreSQL storage
+	pgDB := postgrestorage.NewPostgresDB(conf.DB.Dsn, logger)
 	defer pgDB.Close()
-
+	// если в конфиге указано использовать postgreSQL - создаем таблицы
+	// if the config specifies to use postgreSQL - create tables
 	if conf.DB.UsePG {
 		err := pgDB.Create()
 		if err != nil {
-			logger.Log.Sugar().Errorf("Error creating DB: %s", err)
+			logger.Sugar().Errorf("Error creating DB: %s", err)
 		}
+		// присваиваем переменной db хранилище в postgreSQL
+		// assign the db variable to the postgreSQL storage
 		db = pgDB
 	}
-
+	// если в конфиге указано не использовать postgreSQL, а файл - восстанавливаем метрики из файла
+	// if the config specifies not to use postgreSQL, but a file - restore metrics from file
 	if !conf.DB.UsePG && conf.File.UseFile && conf.File.Restore {
 		metrics, err := file.Read(ctx)
 		if err != nil {
-			logger.Log.Sugar().Errorf("Error reading metrics from file: %s", err)
+			logger.Sugar().Errorf("Error reading metrics from file: %s", err)
 
 		}
 		err = memDB.RestoreFromSerialized(metrics)
 		if err != nil {
-			logger.Log.Sugar().Errorf("Error restoring metrics from file: %s", err)
+			logger.Sugar().Errorf("Error restoring metrics from file: %s", err)
 		}
 	}
-
+	// если в конфиге указано не использовать postgreSQL, а файл
+	//без восстановления сохраненных данных - запускаем запись метрик в файл
+	// if the config specifies not to use postgreSQL, but a file
+	// without restoring saved data - start writing metrics to file
 	if !conf.DB.UsePG && conf.File.UseFile {
 		t := time.NewTicker(conf.File.StoreInterval)
 		defer t.Stop()
@@ -94,11 +104,13 @@ func Run() {
 				metrics := memDB.GetAllSerialized()
 				err := file.Write(ctx, metrics)
 				if err != nil {
-					logger.Log.Sugar().Errorf("Error writing metrics to file: %s", err)
+					logger.Sugar().Errorf("Error writing metrics to file: %s", err)
 				}
 			}
 		}()
 	}
+	// набираем поля для логгера
+	// collect fields for logger
 	fields := []zapcore.Field{
 		zap.String("address", conf.Address),
 		zap.String("log_level", conf.LogLevel),
@@ -110,11 +122,38 @@ func Run() {
 		fields = append(fields, zap.String("file store interval", conf.File.StoreInterval.String()))
 		fields = append(fields, zap.Bool("restore from file", conf.File.Restore))
 	}
-	logger.Log.Info("Started server", fields...)
-	//err := http.ListenAndServeTLS(conf.Address, conf.CertFile, conf.KeyFile, httpserver.MetricRouter(logger.Log, db, conf.Key))
-	err := http.ListenAndServe(conf.Address, httpserver.MetricRouter(logger.Log, db, conf))
-	if err != nil {
-		panic(err)
+	logger.Info("Started server", fields...)
+	// создаем http сервер
+	// create http server
+	srv := &http.Server{
+		Addr:    conf.Address,
+		Handler: httpserver.MetricRouter(logger, db, conf),
+	}
+	// запускаем http сервер
+	// start http server
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Fatal("listen", zap.Error(err))
+		}
+	}()
+	// ожидаем сигнал о завершении
+	// wait for done signal
+	for signal := range sigint {
+		logger.Info("Received signal", zap.String("signal", signal.String()))
+		logger.Info("Shutting down server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := srv.Shutdown(ctx); err != nil {
+			logger.Fatal("server shutdown error", zap.Error(err))
+		}
+		// если в конфиге указано использовать postgreSQL - закрываем соединение
+		// if the config specifies to use postgreSQL - close the connection
+		if conf.DB.UsePG {
+			pgDB.Close()
+		}
+		cancel()
+		logger.Info("Server shutdown gracefully")
+		close(connectionsClosed)
+		return
 	}
 
 }

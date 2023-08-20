@@ -35,6 +35,8 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+		wrappedIFace := NewUpdaterWithZap(db, log)
+
 		// Create a new metric struct
 		var (
 			buf     bytes.Buffer
@@ -63,7 +65,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 					return
 				}
 				// Update the metric
-				db.SetGauge(metric.ID, *metric.Value)
+				wrappedIFace.SetGauge(metric.ID, *metric.Value)
 			case "counter":
 				// Check if delta is negative
 				if *metric.Delta < 0 {
@@ -71,7 +73,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 					return
 				}
 				// Update the metric
-				db.SetCounter(metric.ID, *metric.Delta)
+				wrappedIFace.SetCounter(metric.ID, *metric.Delta)
 			}
 		}
 
