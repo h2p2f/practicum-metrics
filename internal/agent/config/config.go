@@ -7,7 +7,6 @@ package config
 
 import (
 	"crypto/rsa"
-	"fmt"
 	"net"
 	"os"
 	"time"
@@ -59,7 +58,7 @@ func GetConfig() (*AgentConfig, *zap.Logger, error) {
 		zapcore.Lock(os.Stdout),
 		atom))
 	defer logger.Sync() //nolint:errcheck
-	fmt.Println(config.KeyFile)
+
 	// overwrite config with command line flags
 	config.flagLoader(logger)
 
@@ -71,7 +70,6 @@ func GetConfig() (*AgentConfig, *zap.Logger, error) {
 
 	// put IP address in config
 	config.ipLoader()
-	fmt.Println(config.LogLevel)
 
 	// return config
 	return &config, logger, nil

@@ -61,7 +61,7 @@ func TestIpCheckMiddleware(t *testing.T) {
 				req.Header.Set("X-Real-IP", tt.ip)
 			}
 			rr := httptest.NewRecorder()
-			handler := IpCheckMiddleware(logger, subnet)
+			handler := IPCheckMiddleware(logger, subnet)
 			handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			})).ServeHTTP(rr, req)

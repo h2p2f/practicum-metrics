@@ -141,7 +141,6 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 		close(sigint)
 		logger.Info("Agent shutdown gracefully")
 		close(connectionsClosed)
-		return //nolint:govet
 	}
 }
 

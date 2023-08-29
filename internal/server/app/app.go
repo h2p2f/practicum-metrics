@@ -35,7 +35,7 @@ type DataBaser interface {
 }
 
 // Run starts the application
-func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
+func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 	// read configuration
 	conf, logger, err := config.GetConfig()
 	if err != nil {
@@ -105,10 +105,10 @@ func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
 		pgDB.Close()
 	}
 	cancel2()
+	close(sigint)
 	logger.Info("Server shutdown gracefully")
 	close(connectionsClosed)
 	cancel()
-	return
 }
 
 // saveToFile - function for writing metrics to a file

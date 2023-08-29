@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -28,5 +27,4 @@ func (config *AgentConfig) yamlLoader() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Agent config loaded from yaml file")
 }

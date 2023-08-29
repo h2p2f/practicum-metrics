@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func IpCheckMiddleware(logger *zap.Logger, subnet *net.IPNet) func(next http.Handler) http.Handler {
+func IPCheckMiddleware(logger *zap.Logger, subnet *net.IPNet) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			if subnet != nil {
