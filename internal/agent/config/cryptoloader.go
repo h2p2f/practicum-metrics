@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// cryptoLoader - функция загрузки крипто ключа
 // cryptoLoader - crypto key loading function
 func (config *AgentConfig) cryptoLoader(logger *zap.Logger) {
 

@@ -1,5 +1,3 @@
-// Package updatesmetrics содержит в себе http.Handler, который обновляет метрики в JSON-наборе.
-//
 // package updatesmetrics contains an http.Handler that updates metrics in JSON batch.
 package updatesmetrics
 
@@ -13,8 +11,6 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/models"
 )
 
-// Updater это интерфейс, который обновляет метрики.
-//
 // Updater is an interface that updates metrics.
 //
 //go:generate mockery --name Updater --output ./mocks --filename mocks_updatesmetrics.go
@@ -23,8 +19,6 @@ type Updater interface {
 	SetCounter(name string, value int64)
 }
 
-// Handler возвращает http.HandlerFunc, который обрабатывает POST запросы и обновляет метрики в JSON.
-// В негативном случае возвращает внутреннюю ошибку сервера.
 // Handler returns a http.HandlerFunc that handles POST requests and updates the batch metric in JSON.
 // Otherwise, it returns an internal server error.
 func Handler(log *zap.Logger, db Updater) http.HandlerFunc {

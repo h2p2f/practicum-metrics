@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-// envLoader - функция загрузки конфигурации из переменных окружения
-//
 // envLoader - function of loading configuration from environment variables
 func (config *ServerConfig) envLoader(logger *zap.Logger) {
 

@@ -1,5 +1,3 @@
-// Package postgrestorage реализует хранилище метрик в PostgreSQL.
-//
 // Package postgrestorage implements a metric store in PostgreSQL.
 package postgrestorage
 
@@ -21,8 +19,6 @@ type pg struct {
 	logger *zap.Logger
 }
 
-// SetCounter - устанавливает значение counter по имени.
-//
 // SetCounter sets the counter value by name.
 func (pg *pg) SetCounter(key string, value int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -35,8 +31,6 @@ func (pg *pg) SetCounter(key string, value int64) {
 	}
 }
 
-// SetGauge - устанавливает значение gauge по имени.
-//
 // SetGauge sets the gauge value by name.
 func (pg *pg) SetGauge(key string, value float64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -49,8 +43,6 @@ func (pg *pg) SetGauge(key string, value float64) {
 	}
 }
 
-// GetCounter - возвращает значение counter по имени.
-//
 // GetCounter returns the counter value by name.
 func (pg *pg) GetCounter(name string) (value int64, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -65,8 +57,6 @@ func (pg *pg) GetCounter(name string) (value int64, err error) {
 	return value, nil
 }
 
-// GetGauge - возвращает значение gauge по имени.
-//
 // GetGauge returns the gauge value by name.
 func (pg *pg) GetGauge(name string) (value float64, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -81,8 +71,6 @@ func (pg *pg) GetGauge(name string) (value float64, err error) {
 	return value, nil
 }
 
-// GetCounters - возвращает все значения counter.
-//
 // GetCounters returns all counter values.
 func (pg *pg) GetCounters() map[string]int64 {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -123,8 +111,6 @@ func (pg *pg) GetCounters() map[string]int64 {
 	return counters
 }
 
-// GetGauges - возвращает все значения gauge.
-//
 // GetGauges returns all gauge values.
 func (pg *pg) GetGauges() map[string]float64 {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -165,8 +151,6 @@ func (pg *pg) GetGauges() map[string]float64 {
 	return gauges
 }
 
-// NewPostgresDB - создает новый экземпляр PostgresDB.
-//
 // NewPostgresDB creates a new instance of PostgresDB.
 func NewPostgresDB(param string, logger *zap.Logger) *pg {
 
@@ -193,8 +177,6 @@ func NewPostgresDB(param string, logger *zap.Logger) *pg {
 	return &pg{db: db, logger: logger}
 }
 
-// Close - закрывает соединение с базой данных.
-//
 // Close closes the database connection.
 func (pg *pg) Close() {
 	err := pg.db.Close()
@@ -203,8 +185,6 @@ func (pg *pg) Close() {
 	}
 }
 
-// Create - создает таблицу metrics.
-//
 // Create creates the metrics table.
 func (pg *pg) Create() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -225,8 +205,6 @@ func (pg *pg) Create() (err error) {
 	return nil
 }
 
-// Ping - проверяет соединение с базой данных.
-//
 // Ping checks the database connection.
 func (pg *pg) Ping() error {
 	ctx := context.Background()

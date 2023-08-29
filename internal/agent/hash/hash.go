@@ -1,5 +1,3 @@
-// Package hash реализует логику получения хеша данных запроса.
-//
 // Package hash implements the logic of getting the hash of the request data.
 package hash
 

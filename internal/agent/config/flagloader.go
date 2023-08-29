@@ -7,8 +7,6 @@ import (
 	"os"
 )
 
-// isSet - функция, проверяющая, установлен ли флаг.
-//
 // isSet is a function that checks if the flag is set.
 func isSet(fs *flag.FlagSet, name string) bool {
 	set := false
@@ -20,8 +18,6 @@ func isSet(fs *flag.FlagSet, name string) bool {
 	return set
 }
 
-// flagLoader - функция загрузки конфигурации из флагов
-//
 // flagLoader - function of loading configuration from flags
 func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 	logger.Debug("Loading config from flags")
@@ -60,13 +56,13 @@ func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 	fs.StringVar(&config.Key, "k", config.Key, "Key")
 	fs.StringVar(&config.KeyFile, "crypto-key", config.KeyFile, "RSA key file")
 	fs.IntVar(&config.RateLimit, "l", config.RateLimit, "Rate limit")
-	// парсим флаги
+
 	// parse flags
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		logger.Error("Failed to parse flags", zap.Error(err))
 	}
-	//если ключ не задан - обнуляем его
+
 	//if the key is not set - zero it
 	if !isSet(fs, "k") {
 		config.Key = ""

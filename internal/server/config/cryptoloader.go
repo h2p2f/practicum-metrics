@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-// cryptoLoader - функция загрузки крипто ключа
-//
 // cryptoLoader - function of loading crypto key
 func (config *ServerConfig) cryptoLoader(logger *zap.Logger) (err error) {
 	logger.Debug("try to load private RSA key")

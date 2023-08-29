@@ -7,11 +7,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// yamlLoader - функция загрузки конфига из yaml файла
-//
 // yamlLoader - function for loading config from yaml file
 func (config *AgentConfig) yamlLoader() {
-	// читаем конфиг из файла
+
 	// read config from yamlFile
 	yamlFile, err := os.Open("./config/agent.yaml")
 	if err != nil {

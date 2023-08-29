@@ -98,7 +98,7 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 		zap.String("key file", conf.KeyFile),
 		zap.String("ip address", conf.IPaddr.String()),
 	}
-	// если ключ не пустой - добавляем сообщение в лог
+
 	// if the key is not empty - add a message to the log
 	if conf.Key != "" {
 		msg := "key is presented"

@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-// isSet - функция проверки наличия флага
-//
 // isSet - function of checking the presence of a flag
 func isSet(fs *flag.FlagSet, name string) bool {
 	set := false
@@ -21,8 +19,6 @@ func isSet(fs *flag.FlagSet, name string) bool {
 	return set
 }
 
-// flagLoader - функция загрузки конфигурации из флагов
-//
 // flagLoader - function of loading configuration from flags
 func (config *ServerConfig) flagLoader(logger *zap.Logger) {
 	logger.Debug("Loading config from flags")

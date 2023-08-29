@@ -1,5 +1,3 @@
-// Package getallmetrics содержит в себе http.Handler, который возвращает все метрики.
-//
 // package getallmetrics contains an http.Handler that returns all the metrics.
 package getallmetrics
 
@@ -10,8 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Getter это интерфейс, который получает все метрики.
-//
 // Getter is an interface that gets all the metrics.
 //
 //go:generate mockery --name Getter --output ./mocks --filename mocks_getmetrics.go
@@ -20,10 +16,6 @@ type Getter interface {
 	GetGauges() map[string]float64
 }
 
-// Handler возвращает http.HandlerFunc, который обрабатывает GET запросы и возвращает все метрики.
-// Он записывает counters и gauges в тело ответа.
-// В противном случае возвращает ошибку метода не разрешен.
-//
 // Handler returns a http.HandlerFunc that handles GET requests and returns all the metrics.
 // It writes the counters and gauges to the response body.
 // Otherwise, it returns a method not allowed error.

@@ -1,56 +1,3 @@
-// Package staticlint Кастомный линтер на основе staticcheck и расширенной стандартной библиотеки,
-// который проверяет код на наличие ошибок и неоптимальных мест в коде.
-//
-// Сборка и запуск: go build -o staticlint cmd/staticlint/main.go
-// ./staticlint --help
-//
-// Подробнее о staticcheck: https://staticcheck.io/docs/
-// Добавлены анализаторы cheknoglobals и nakedret
-// подключен самописный анализатор OsExitInMain
-// Используемые анализаторы:
-// assign - обнаруживает бесполезные присваивания
-// atomic - обнаруживает распространенные ошибочные использования пакета sync/atomic
-// atomicalign - обнаруживает структуры, которые были бы меньше, если бы их поля были отсортированы
-// bools - обнаруживает распространенные ошибки, связанные с логическими операторами
-// buildssa - создает представление программы в форме SSA
-// buildtag - проверяет, что теги build имеют правильный формат
-// composite - обнаруживает составные литералы, которые можно упростить
-// copylock - обнаруживает блокировки, передаваемые по значению
-// deepequalerrors - обнаруживает ошибки, которые сравниваются с помощью reflect.DeepEqual
-// defers - обнаруживает отложенные вызовы, которые никогда не будут достигнуты
-// directive - проверяет, что директивы следуют за пустой строкой
-// errorsas - обнаруживает ошибки, которые сравниваются с помощью errors.As
-// fieldalignment - обнаруживает структуры, которые были бы меньше, если бы их поля были отсортированы
-// findcall - находит вызовы функции с заданным именем
-// httpresponse - обнаруживает распространенные ошибки, связанные с HTTP-ответами
-// ifaceassert - обнаруживает избыточные утверждения типа от/к интерфейсам
-// loopclosure - обнаруживает ссылки на переменные цикла из вложенных функций
-// lostcancel - обнаруживает контексты, которые отменяются слишком поздно
-// nilfunc - обнаруживает бесполезные сравнения между функциями и nil
-// nilness - обнаруживает избыточные сравнения с nil
-// pkgfact - обнаруживает пакеты с большим количеством фактов
-// printf - обнаруживает ошибки в строках формата в стиле Printf
-// reflectvaluecompare - обнаруживает значения, которые могут быть сравнены с помощью reflect.Value
-// shadow - обнаруживает затененные переменные
-// sigchanyzer - обнаруживает распространенные ошибочные использования пакета sync/atomic
-// slog - обнаруживает распространенные ошибки, связанные с пакетом slog
-// sortslice - обнаруживает срезы, которые могут быть отсортированы
-// stdmethods - обнаруживает методы, которые могут быть функциями верхнего уровня
-// stringintconv - обнаруживает ненужные преобразования между строками и int
-// structtag - проверяет, что теги структур имеют правильный формат
-// testinggoroutine - обнаруживает горутины, которые не завершаются в тестах
-// tests - обнаруживает распространенные ошибки, связанные с тестами
-// timeformat - обнаруживает недопустимые строки формата времени
-// unmarshal - обнаруживает распространенные ошибки, связанные с Unmarshal
-// unsafeptr - обнаруживает распространенные ошибки, связанные с unsafe.Pointer
-// unusedresult - обнаруживает неиспользуемые результаты вызовов функций
-// unusedwrite - обнаруживает записи в каналы, которые никогда не будут прочитаны
-// usesgenerics - обнаруживает использование обобщенных функций
-// osexitinmain - обнаруживает использование os.Exit в main
-// nakedret - обнаруживает использование naked return
-// rowserr - проверяет, что строки, возвращаемые sql.Rows, закрываются
-//
-//
 // Custom linter based on staticcheck and an extended standard library,
 // which checks the code for errors and suboptimal places in the code.
 //
@@ -156,17 +103,17 @@ import (
 )
 
 func main() {
-	// Слайс анализаторов, которые будут использоваться
+
 	// Slice of analyzers that will be used
 	var analyzers []*analysis.Analyzer
-	// Добавляем все анализаторы SA и один ST из staticcheck
+
 	// Add all SA analyzers and one ST from staticcheck
 	for _, v := range staticcheck.Analyzers {
 		if strings.Contains(v.Analyzer.Name, "SA") || v.Analyzer.Name == "ST1013" {
 			analyzers = append(analyzers, v.Analyzer)
 		}
 	}
-	// Добавляем анализаторы из расширенной стандартной библиотеки
+
 	// Add analyzers from the extended standard library
 	analyzers = append(analyzers,
 		assign.Analyzer,
@@ -209,16 +156,16 @@ func main() {
 		unusedwrite.Analyzer,
 		usesgenerics.Analyzer,
 	)
-	// Добавляем свой анализатор OsExitInMain
+
 	// Add our analyzer OsExitInMain
 	analyzers = append(analyzers, OsExitInMainAnalyser)
-	// Добавляем анализатор nakedret
+
 	// Add nakedret analyzer
 	analyzers = append(analyzers, nakedret.NakedReturnAnalyzer(5))
-	// Добавляем анализатор rowserr
+
 	// Add rowserr analyzer
 	analyzers = append(analyzers, rowserr.NewAnalyzer("github.com/jmoiron/sqlx"))
-	// Запускаем анализаторы
+	// Run all analyzers
 	multichecker.Main(
 		analyzers...,
 	)

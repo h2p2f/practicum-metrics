@@ -19,8 +19,6 @@ type MemStorage struct {
 	mut      sync.RWMutex
 }
 
-// NewMemStorage создает новый экземпляр MemStorage.
-//
 // NewMemStorage creates a new instance of MemStorage.
 func NewMemStorage(log *zap.Logger) *MemStorage {
 	return &MemStorage{
@@ -30,8 +28,6 @@ func NewMemStorage(log *zap.Logger) *MemStorage {
 	}
 }
 
-// SetGauges - устанавливает значение gauge для заданного имени.
-//
 // SetGauges sets the gauge value for the given name.
 func (m *MemStorage) SetGauge(name string, value float64) {
 	m.mut.Lock()
@@ -48,9 +44,6 @@ func (m *MemStorage) SetCounter(name string, value int64) {
 	m.counters[name] = m.counters[name] + value
 }
 
-// GetGauges возвращает значение gauge для заданного имени.
-// Если gauge не найден, возвращает 0 и ошибку.
-//
 // GetGauge returns the value of the gauge with the given name.
 // If the gauge is not found, it returns 0 and an error.
 func (m *MemStorage) GetGauge(name string) (float64, error) {
@@ -63,9 +56,6 @@ func (m *MemStorage) GetGauge(name string) (float64, error) {
 	return value, nil
 }
 
-// GetCounter возвращает значение counter для заданного имени.
-// Если counter не найден, возвращает 0 и ошибку.
-//
 // GetCounter returns the counter value for the given name.
 // If the counter does not exist, it returns 0 and an error.
 func (m *MemStorage) GetCounter(name string) (int64, error) {
@@ -78,22 +68,16 @@ func (m *MemStorage) GetCounter(name string) (int64, error) {
 	return value, nil
 }
 
-// GetCounters возвращает все counter.
-//
 // GetCounters returns all counters.
 func (m *MemStorage) GetCounters() map[string]int64 {
 	return m.counters
 }
 
-// GetGauges возвращает все gauge.
-//
 // GetGauges returns all gauges.
 func (m *MemStorage) GetGauges() map[string]float64 {
 	return m.gauges
 }
 
-// GetAllSerialized возвращает все метрики в сериализованном виде.
-//
 // GetAllSerialized returns all metrics in serialized form.
 func (m *MemStorage) GetAllSerialized() [][]byte {
 	var result [][]byte
@@ -123,8 +107,6 @@ func (m *MemStorage) GetAllSerialized() [][]byte {
 	return result
 }
 
-// RestoreFromSerialized восстанавливает все метрики из сериализованного вида.
-//
 // RestoreFromSerialized restores all metrics from serialized form.
 func (m *MemStorage) RestoreFromSerialized(data [][]byte) error {
 
@@ -144,10 +126,6 @@ func (m *MemStorage) RestoreFromSerialized(data [][]byte) error {
 	return nil
 }
 
-// Ping проверяет доступность хранилища.
-// Это заглушка, которая всегда возвращает ошибку.
-// Реализовано для совместимости с интерфейсом. (TODO: проработать этот момент, вдруг не нужно ;))
-//
 // Ping checks the availability of the storage.
 // This is a stub that always returns an error.
 // Implemented for compatibility with the interface.

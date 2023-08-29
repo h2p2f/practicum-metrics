@@ -7,8 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// yamlLoader - функция загрузки конфигурации из yaml файла
-//
 // yamlLoader - function of loading configuration from yaml file
 func (config *ServerConfig) yamlLoader(path string) {
 	file, err := os.Open(path)
