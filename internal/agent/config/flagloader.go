@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"log"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -23,8 +23,8 @@ func isSet(fs *flag.FlagSet, name string) bool {
 // flagLoader - функция загрузки конфигурации из флагов
 //
 // flagLoader - function of loading configuration from flags
-func (config *AgentConfig) flagLoader() {
-	config.Logger.Debug("Loading config from flags")
+func (config *AgentConfig) flagLoader(logger *zap.Logger) {
+	logger.Debug("Loading config from flags")
 	useJSONConfig := false
 	var jsonConfigPath string
 	jsonConfFS := flag.NewFlagSet("json", flag.ContinueOnError)
@@ -32,7 +32,7 @@ func (config *AgentConfig) flagLoader() {
 	jsonConfFS.StringVar(&jsonConfigPath, "config", "./config/agent.json", "config file")
 	err := jsonConfFS.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
-		log.Println(err)
+		logger.Error("Failed to parse json config flags", zap.Error(err))
 	}
 	if isSet(jsonConfFS, "c") || isSet(jsonConfFS, "config") {
 		useJSONConfig = true
@@ -44,12 +44,13 @@ func (config *AgentConfig) flagLoader() {
 	if useJSONConfig {
 		jsonFile, err := os.ReadFile(jsonConfigPath)
 		if err != nil {
-			log.Fatal(err)
+			logger.Error("Failed to read json config file", zap.Error(err))
 		}
 		err = json.Unmarshal(jsonFile, &config)
 		if err != nil {
-			log.Fatal(err)
+			logger.Error("Failed to parse json config file", zap.Error(err))
 		}
+		config.jsonLoaded = true
 	}
 
 	fs := flag.NewFlagSet("agent", flag.ContinueOnError)
@@ -63,16 +64,16 @@ func (config *AgentConfig) flagLoader() {
 	// parse flags
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
-		log.Println(err)
+		logger.Error("Failed to parse flags", zap.Error(err))
 	}
 	//если ключ не задан - обнуляем его
 	//if the key is not set - zero it
 	if !isSet(fs, "k") {
 		config.Key = ""
 	}
-	if !isSet(fs, "crypto-key") {
+	if !isSet(fs, "crypto-key") && !config.jsonLoaded && config.LogLevel != "debug" {
 		config.KeyFile = ""
 	}
 
-	config.Logger.Debug("Config loaded from flags")
+	logger.Debug("Config loaded from flags")
 }

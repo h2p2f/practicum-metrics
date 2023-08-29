@@ -1,5 +1,3 @@
-// Package getmetric содержит в себе http.Handler, который получает метрику и возвращает её значение.
-//
 // Package getmetric contains an http.Handler that gets the metric and returns its value.
 package getmetric
 
@@ -11,8 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Getter это интерфейс, который получает метрику.
-//
 // Getter is an interface that gets the metric.
 //
 //go:generate mockery --name Getter --output ./mocks --filename mocks_getmetric.go
@@ -21,10 +17,6 @@ type Getter interface {
 	GetGauge(name string) (value float64, err error)
 }
 
-// Handler возвращает http.HandlerFunc, который обрабатывает GET запросы и получает метрику.
-// Он записывает значение метрики в тело ответа, если метрика найдена.
-// В противном случае возвращает ошибку "Not found".
-//
 // Handler returns a http.HandlerFunc that handles GET requests and gets the metric.
 // It writes the metric value to the response body if the metric is found.
 // Otherwise, it returns a not found error.
@@ -47,33 +39,15 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 			return
 		}
 		// Get the metric value from the database.
-		switch metric {
-		case "gauge":
-			value, err := wrappedIFace.GetGauge(key)
-			if err != nil {
-				http.Error(w, "Not found", http.StatusNotFound)
-				return
-			}
-			_, err = w.Write([]byte(strconv.FormatFloat(value, 'f', -1, 64)))
-			if err != nil {
-				logger.Error("could not write response", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		case "counter":
-			value, err := wrappedIFace.GetCounter(key)
-			if err != nil {
-				http.Error(w, "Not found", http.StatusNotFound)
-
-			}
-			_, err = w.Write([]byte(strconv.FormatInt(value, 10)))
-			if err != nil {
-				logger.Error("could not write response", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-
-			}
-		default:
-			http.Error(w, "Bad request", http.StatusBadRequest)
+		value, err := getterMetric(&wrappedIFace, logger, metric, key)
+		if err != nil {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+		_, err = w.Write([]byte(value))
+		if err != nil {
+			logger.Error("could not write response", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		// Set the content type header to text/plain and the status code to 200 OK.
@@ -81,4 +55,33 @@ func Handler(logger *zap.Logger, db Getter) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 
+}
+
+// getterMetric - function to get the metric
+func getterMetric(getter *GetterWithZap, logger *zap.Logger, metric, key string) (string, error) {
+	var (
+		i   int64
+		f   float64
+		err error
+	)
+	switch metric {
+	case "gauge":
+		// Get the gauge value from the database.
+		f, err = getter.GetGauge(key)
+		if err != nil {
+			logger.Error("could not get gauge", zap.Error(err))
+			return "", err
+		}
+		return strconv.FormatFloat(f, 'f', -1, 64), nil
+	case "counter":
+		// Get the counter value from the database.
+		i, err = getter.GetCounter(key)
+		if err != nil {
+			logger.Error("could not get counter", zap.Error(err))
+			return "", err
+		}
+		return strconv.FormatInt(i, 10), nil
+	default:
+		return "", err
+	}
 }

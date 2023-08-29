@@ -1,9 +1,8 @@
-// Package updatemetric содержит в себе http.Handler, который обновляет метрику и возвращает http.StatusOK в случае успеха.
-//
-// package updatemetric contains an http.Handler that updates the metric and returns http.StatusOK if successful.
+// Package updatemetric contains an http.Handler that updates the metric and returns http.StatusOK if successful.
 package updatemetric
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -11,8 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Updater это интерфейс, который обновляет метрику.
-//
 // Updater is an interface that updates the metric.
 //
 //go:generate mockery --name Updater --output ./mocks --filename mocks_updatemetric.go
@@ -21,11 +18,6 @@ type Updater interface {
 	SetCounter(name string, value int64)
 }
 
-// Handler возвращает http.HandlerFunc, который обрабатывает POST запросы и обновляет метрику.
-// Он возвращает http.StatusOK в случае успеха.
-// В противном случае возвращает внутреннюю ошибку сервера.
-// данные для обновления получает в URI
-//
 // Handler returns a http.HandlerFunc that handles POST requests and updates the metric.
 // It returns http.StatusOK if successful.
 // Otherwise, it returns an internal server error.
@@ -46,8 +38,7 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 		value := chi.URLParam(r, "value")
 		// Check for required fields is valid
 		if metric == "" {
-			log.Sugar().Infow("bad request")
-
+			log.Info("bad request")
 			http.Error(w, "Bad request", http.StatusNotFound)
 			return
 		}
@@ -56,44 +47,54 @@ func Handler(log *zap.Logger, db Updater) http.HandlerFunc {
 			return
 		}
 		// Processing and validation of the received data
-		switch metric {
-		case "gauge":
-			// Parse the value to float64
-			f, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				log.Error("could not parse float", zap.Error(err))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			// Check if the value is negative
-			if f < 0 {
-				log.Error("value must be positive")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			// Update the metric
-			wrappedIFace.SetGauge(key, f)
-		case "counter":
-			// Parse the value to int64
-			i, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				log.Error("could not parse int", zap.Error(err))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			// Check if the value is negative
-			if i < 0 {
-				log.Error("value must be positive")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			// Update the metric
-			wrappedIFace.SetCounter(key, i)
-		// If the metric type is unknown, return a bad request
-		default:
-			log.Error("invalid metric type")
-			w.WriteHeader(http.StatusBadRequest)
+		err := updaterMetric(&wrappedIFace, log, metric, key, value)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
 	}
+}
+
+// updaterMetric - function to update the metric
+func updaterMetric(updater *UpdaterWithZap, log *zap.Logger, metric, key, value string) error {
+	var (
+		i   int64
+		f   float64
+		err error
+	)
+	switch metric {
+	case "gauge":
+		// Parse the value to float64
+		f, err = strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Error("could not parse float", zap.Error(err))
+			return err
+		}
+		// Check if the value is negative
+		if f < 0 {
+			log.Error("value must be positive")
+			return errors.New("value must be positive")
+		}
+		// Update the metric
+		updater.SetGauge(key, f)
+	case "counter":
+		// Parse the value to int64
+		i, err = strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			log.Error("could not parse int", zap.Error(err))
+			return err
+		}
+		// Check if the value is negative
+		if i < 0 {
+			log.Error("value must be positive")
+			return errors.New("value must be positive")
+		}
+		// Update the metric
+		updater.SetCounter(key, i)
+	default:
+		log.Error("invalid metric type")
+		return errors.New("invalid metric type")
+	}
+	return nil
+
 }

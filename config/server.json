@@ -1,8 +1,8 @@
 {
   "address": "localhost:8080",
   "restore": true,
-  "store_interval": "1s",
-  "store_file": "/path/to/file.db",
-  "database_dsn": "",
-  "crypto_key": "/path/to/key.pem"
+  "store_interval": "10s",
+  "store_file": "/tmp/metrics-db.json",
+  "database_dsn": "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
+  "crypto_key": "./crypto/private.rsa"
 }

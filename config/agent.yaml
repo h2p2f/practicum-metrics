@@ -5,3 +5,5 @@ report: 10s
 key: key
 rate_limit: 0
 key_file: ./crypto/public.rsa
+retry_count: 3
+retry_wait_time: 1s

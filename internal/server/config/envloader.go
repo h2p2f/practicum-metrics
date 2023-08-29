@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"time"
@@ -10,10 +10,10 @@ import (
 // envLoader - функция загрузки конфигурации из переменных окружения
 //
 // envLoader - function of loading configuration from environment variables
-func (config *ServerConfig) envLoader() {
+func (config *ServerConfig) envLoader(logger *zap.Logger) {
 
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		config.Address = envAddress
+		config.Params.Address = envAddress
 	}
 	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
 		config.File.Path = envFilePath
@@ -28,7 +28,7 @@ func (config *ServerConfig) envLoader() {
 	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
 		envRestore, err := strconv.ParseBool(envRestore)
 		if err != nil {
-			log.Println(err)
+			logger.Debug("failed to parse RESTORE env variable", zap.Error(err))
 		}
 		config.File.Restore = envRestore
 	}
@@ -37,7 +37,7 @@ func (config *ServerConfig) envLoader() {
 		config.DB.UsePG = true
 	}
 	if envKey := os.Getenv("KEY"); envKey != "" {
-		config.Key = envKey
+		config.Params.Key = envKey
 	}
 
 }

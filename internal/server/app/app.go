@@ -1,9 +1,4 @@
-// Package app реализует приложение, в котором создается конфигурация приложения из yaml файла,
-// обрабатываются флаги и переменные окружения если присутствуют,
-// хранение метрик происходит в памяти, в файле или в базе данных в зависимости от конфигурации
-// в процессе запуска создается логгер и стартует http сервер с выбранным хранилищем
-//
-// package app implements an application in which the application configuration is created from a yaml file,
+// Package app implements an application in which the application configuration is created from a yaml file,
 // flags and environment variables are processed if present,
 // metrics are stored in memory, in a file or in a database depending on the configuration
 // during startup, a logger is created and an http server with the selected storage starts
@@ -27,9 +22,6 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/postgrestorage"
 )
 
-// DataBaser интерфейс для работы с хранилищем
-// интерфейс описывает методы inmemory хранилища и postgreSQL хранилища
-//
 // DataBaser interface for working with storage
 // the interface describes the methods of the inmemory storage and the postgreSQL storage
 type DataBaser interface {
@@ -42,115 +34,118 @@ type DataBaser interface {
 	Ping() error
 }
 
-// Run запускает приложение
-//
 // Run starts the application
 func Run(sigint <-chan os.Signal, connectionsClosed chan<- struct{}) {
-	// читаем конфигурацию
 	// read configuration
-	conf := config.GetConfig()
-	//достаем логгер из структуры конфига
-
-	logger := conf.Logger
-
-	ctx := context.Background()
-	// создаем хранилище в памяти
+	conf, logger, err := config.GetConfig()
+	if err != nil {
+		panic(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	// create inmemory storage
 	memDB := inmemorystorage.NewMemStorage(logger)
-	// присваиваем переменной db хранилище в памяти
 	// assign the db variable to the inmemory storage
 	var db DataBaser = memDB
-	// инициализируем хранилище в файле
 	// initialize file storage
 	file := filestorage.NewFileDB(conf.File.Path, conf.File.StoreInterval, logger)
-	// создаем хранилище в postgreSQL
 	// create postgreSQL storage
 	pgDB := postgrestorage.NewPostgresDB(conf.DB.Dsn, logger)
 	defer pgDB.Close()
-	// если в конфиге указано использовать postgreSQL - создаем таблицы
 	// if the config specifies to use postgreSQL - create tables
 	if conf.DB.UsePG {
 		err := pgDB.Create()
 		if err != nil {
 			logger.Sugar().Errorf("Error creating DB: %s", err)
 		}
-		// присваиваем переменной db хранилище в postgreSQL
 		// assign the db variable to the postgreSQL storage
 		db = pgDB
 	}
-	// если в конфиге указано не использовать postgreSQL, а файл - восстанавливаем метрики из файла
 	// if the config specifies not to use postgreSQL, but a file - restore metrics from file
 	if !conf.DB.UsePG && conf.File.UseFile && conf.File.Restore {
-		metrics, err := file.Read(ctx)
-		if err != nil {
-			logger.Sugar().Errorf("Error reading metrics from file: %s", err)
-
-		}
-		err = memDB.RestoreFromSerialized(metrics)
-		if err != nil {
-			logger.Sugar().Errorf("Error restoring metrics from file: %s", err)
-		}
+		restoreFromFile(ctx, logger, file, memDB)
 	}
-	// если в конфиге указано не использовать postgreSQL, а файл
-	//без восстановления сохраненных данных - запускаем запись метрик в файл
 	// if the config specifies not to use postgreSQL, but a file
 	// without restoring saved data - start writing metrics to file
 	if !conf.DB.UsePG && conf.File.UseFile {
-		t := time.NewTicker(conf.File.StoreInterval)
-		defer t.Stop()
-
-		go func() {
-			for range t.C {
-				metrics := memDB.GetAllSerialized()
-				err := file.Write(ctx, metrics)
-				if err != nil {
-					logger.Sugar().Errorf("Error writing metrics to file: %s", err)
-				}
-			}
-		}()
+		go saveToFile(ctx, conf.File.StoreInterval, file, logger, memDB)
 	}
-	// набираем поля для логгера
 	// collect fields for logger
 	fields := []zapcore.Field{
-		zap.String("address", conf.Address),
-		zap.String("log_level", conf.LogLevel),
+		zap.String("address", conf.Params.Address),
+		zap.String("log_level", conf.Params.LogLevel),
 	}
 	if conf.DB.UsePG {
-		fields = append(fields, zap.String("postgreSQL database_dsn", conf.DB.Dsn))
+		fields = append(fields, zap.String("postgreSQL", conf.DB.Dsn))
 	} else if conf.File.UseFile {
-		fields = append(fields, zap.String("file path", conf.File.Path))
-		fields = append(fields, zap.String("file store interval", conf.File.StoreInterval.String()))
-		fields = append(fields, zap.Bool("restore from file", conf.File.Restore))
+		fields = append(fields, zap.String("file_path", conf.File.Path))
+		fields = append(fields, zap.String("store_interval", conf.File.StoreInterval.String()))
+		fields = append(fields, zap.Bool("restore_file", conf.File.Restore))
 	}
 	logger.Info("Started server", fields...)
-	// создаем http сервер
 	// create http server
 	srv := &http.Server{
-		Addr:    conf.Address,
+		Addr:    conf.Params.Address,
 		Handler: httpserver.MetricRouter(logger, db, conf),
 	}
-	// запускаем http сервер
 	// start http server
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal("listen", zap.Error(err))
 		}
 	}()
-	// ожидаем сигнал о завершении
 	// wait for done signal
-	if <-sigint; true {
-		logger.Info("Shutting down server...")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := srv.Shutdown(ctx); err != nil {
-			logger.Fatal("server shutdown error", zap.Error(err))
-		}
-		if conf.DB.UsePG {
-			pgDB.Close()
-		}
-		cancel()
-		logger.Info("Server shutdown gracefully")
-		close(connectionsClosed)
-		return
+	<-sigint
+	logger.Info("Shutting down server...")
+	ctx2, cancel2 := context.WithTimeout(ctx, 5*time.Second)
+	if err := srv.Shutdown(ctx2); err != nil {
+		logger.Fatal("server shutdown error", zap.Error(err))
 	}
+	if conf.DB.UsePG {
+		pgDB.Close()
+	}
+	cancel2()
+	logger.Info("Server shutdown gracefully")
+	close(connectionsClosed)
+	cancel()
+	return
+}
 
+// saveToFile - function for writing metrics to a file
+func saveToFile(
+	ctx context.Context,
+	interval time.Duration,
+	file *filestorage.FileDB,
+	logger *zap.Logger,
+	memDB *inmemorystorage.MemStorage) {
+
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	for range t.C {
+		metrics := memDB.GetAllSerialized()
+		err := file.Write(ctx, metrics)
+		if err != nil {
+			logger.Error("could not write metrics to file", zap.Error(err))
+		}
+		if ctx.Err() != nil && errors.Is(context.Canceled, ctx.Err()) {
+			return
+		}
+	}
+}
+
+// restoreFromFile - function for restoring metrics from a file
+func restoreFromFile(
+	ctx context.Context,
+	logger *zap.Logger,
+	file *filestorage.FileDB,
+	memDB *inmemorystorage.MemStorage) {
+	metrics, err := file.Read(ctx)
+	if err != nil {
+		logger.Error("could not read metrics from file", zap.Error(err))
+	}
+	err = memDB.RestoreFromSerialized(metrics)
+	if err != nil {
+		logger.Error("could not restore metrics from file", zap.Error(err))
+	}
 }

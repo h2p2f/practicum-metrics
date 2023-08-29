@@ -1,9 +1,3 @@
-// Package decryptormiddleware реализует обертку над http.Handler, которая расшифровывает тело запроса, если
-// присутсвует RSA ключ шифрования в конфиге
-// Жесткие ограничения:
-// расшифровывает только тело запроса, если есть RSA ключ, не расшифровывает заголовки
-// работает только с эндпоинтами /update/ и /updates/
-//
 // Package decryptormiddleware implements http.Handler wrapper, which decrypts request body if
 // RSA key is present in config
 // Hard limitations:
@@ -20,29 +14,24 @@ import (
 	"net/http"
 )
 
-// DecryptMiddleware - обертка над http.Handler, которая расшифровывает тело запроса, если
-// присутсвует RSA ключ шифрования в конфиге
-//
 // DecryptMiddleware - http.Handler wrapper, which decrypts request body if
 // RSA key is present in config
 func DecryptMiddleware(RSAKey *rsa.PrivateKey) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/update/" || r.URL.Path == "/updates/" {
-				if RSAKey != nil {
-					var buf bytes.Buffer
-					_, err := buf.ReadFrom(r.Body)
-					if err != nil {
-						http.Error(w, "Bad request", http.StatusBadRequest)
-						return
-					}
-					data, err := rsa.DecryptPKCS1v15(rand.Reader, RSAKey, buf.Bytes())
-					if err != nil {
-						http.Error(w, "Unprocessable entity", http.StatusUnprocessableEntity)
-						return
-					}
-					r.Body = io.NopCloser(bytes.NewReader(data))
+			if RSAKey != nil && (r.URL.Path == "/update/" || r.URL.Path == "/updates/") {
+				var buf bytes.Buffer
+				_, err := buf.ReadFrom(r.Body)
+				if err != nil {
+					http.Error(w, "Bad request", http.StatusBadRequest)
+					return
 				}
+				data, err := rsa.DecryptPKCS1v15(rand.Reader, RSAKey, buf.Bytes())
+				if err != nil {
+					http.Error(w, "Unprocessable entity", http.StatusUnprocessableEntity)
+					return
+				}
+				r.Body = io.NopCloser(bytes.NewReader(data))
 			}
 			next.ServeHTTP(w, r)
 		}

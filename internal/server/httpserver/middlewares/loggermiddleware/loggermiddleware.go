@@ -1,6 +1,3 @@
-// Package loggermiddleware реализует обертку над http.Request и http.ResponseWriter, которая логирует запросы к серверу.
-// использует экземпляр zap.Logger для логирования.
-//
 // Package loggermiddleware implements wrapper over http.Request and http.ResponseWriter, which logs requests to the server.
 // uses an instance of zap.Logger to log.
 package loggermiddleware
@@ -14,9 +11,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// LogMiddleware - middleware для логирования запросов к серверу
-// использует экземпляр zap.Logger для логирования
-//
 // LogMiddleware - middleware for logging requests to the server
 // uses an instance of zap.Logger to log
 func LogMiddleware(log *zap.Logger) func(next http.Handler) http.Handler {

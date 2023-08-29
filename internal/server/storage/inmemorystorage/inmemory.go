@@ -12,18 +12,18 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/servererrors"
 )
 
-type memStorage struct {
+type MemStorage struct {
 	logger   *zap.Logger
 	gauges   map[string]float64
 	counters map[string]int64
 	mut      sync.RWMutex
 }
 
-// NewMemStorage создает новый экземпляр memStorage.
+// NewMemStorage создает новый экземпляр MemStorage.
 //
-// NewMemStorage creates a new instance of memStorage.
-func NewMemStorage(log *zap.Logger) *memStorage {
-	return &memStorage{
+// NewMemStorage creates a new instance of MemStorage.
+func NewMemStorage(log *zap.Logger) *MemStorage {
+	return &MemStorage{
 		gauges:   make(map[string]float64),
 		counters: make(map[string]int64),
 		logger:   log,
@@ -33,7 +33,7 @@ func NewMemStorage(log *zap.Logger) *memStorage {
 // SetGauges - устанавливает значение gauge для заданного имени.
 //
 // SetGauges sets the gauge value for the given name.
-func (m *memStorage) SetGauge(name string, value float64) {
+func (m *MemStorage) SetGauge(name string, value float64) {
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	m.gauges[name] = value
@@ -42,7 +42,7 @@ func (m *memStorage) SetGauge(name string, value float64) {
 // SetCounter устанавливает значение counter для заданного имени.
 //
 // SetCounter sets the counter value for the given name.
-func (m *memStorage) SetCounter(name string, value int64) {
+func (m *MemStorage) SetCounter(name string, value int64) {
 	m.mut.Lock()
 	defer m.mut.Unlock()
 	m.counters[name] = m.counters[name] + value
@@ -53,7 +53,7 @@ func (m *memStorage) SetCounter(name string, value int64) {
 //
 // GetGauge returns the value of the gauge with the given name.
 // If the gauge is not found, it returns 0 and an error.
-func (m *memStorage) GetGauge(name string) (float64, error) {
+func (m *MemStorage) GetGauge(name string) (float64, error) {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
 	value, ok := m.gauges[name]
@@ -68,7 +68,7 @@ func (m *memStorage) GetGauge(name string) (float64, error) {
 //
 // GetCounter returns the counter value for the given name.
 // If the counter does not exist, it returns 0 and an error.
-func (m *memStorage) GetCounter(name string) (int64, error) {
+func (m *MemStorage) GetCounter(name string) (int64, error) {
 	m.mut.RLock()
 	defer m.mut.RUnlock()
 	value, ok := m.counters[name]
@@ -81,21 +81,21 @@ func (m *memStorage) GetCounter(name string) (int64, error) {
 // GetCounters возвращает все counter.
 //
 // GetCounters returns all counters.
-func (m *memStorage) GetCounters() map[string]int64 {
+func (m *MemStorage) GetCounters() map[string]int64 {
 	return m.counters
 }
 
 // GetGauges возвращает все gauge.
 //
 // GetGauges returns all gauges.
-func (m *memStorage) GetGauges() map[string]float64 {
+func (m *MemStorage) GetGauges() map[string]float64 {
 	return m.gauges
 }
 
 // GetAllSerialized возвращает все метрики в сериализованном виде.
 //
 // GetAllSerialized returns all metrics in serialized form.
-func (m *memStorage) GetAllSerialized() [][]byte {
+func (m *MemStorage) GetAllSerialized() [][]byte {
 	var result [][]byte
 	var met models.Metric
 	m.mut.RLock()
@@ -126,7 +126,7 @@ func (m *memStorage) GetAllSerialized() [][]byte {
 // RestoreFromSerialized восстанавливает все метрики из сериализованного вида.
 //
 // RestoreFromSerialized restores all metrics from serialized form.
-func (m *memStorage) RestoreFromSerialized(data [][]byte) error {
+func (m *MemStorage) RestoreFromSerialized(data [][]byte) error {
 
 	var met models.Metric
 	for _, value := range data {
@@ -151,6 +151,6 @@ func (m *memStorage) RestoreFromSerialized(data [][]byte) error {
 // Ping checks the availability of the storage.
 // This is a stub that always returns an error.
 // Implemented for compatibility with the interface.
-func (m *memStorage) Ping() error {
+func (m *MemStorage) Ping() error {
 	return servererrors.ErrNotImplemented
 }

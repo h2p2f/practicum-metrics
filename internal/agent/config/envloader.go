@@ -1,6 +1,7 @@
 package config
 
 import (
+	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"time"
@@ -8,8 +9,8 @@ import (
 
 // envLoader - функция загрузки конфигурации из переменных окружения
 // envLoader - function of loading configuration from environment variables
-func (config *AgentConfig) envLoader() {
-	config.Logger.Debug("Loading config from environment variables")
+func (config *AgentConfig) envLoader(logger *zap.Logger) {
+	logger.Debug("Loading config from environment variables")
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
 		config.ServerAddress = envServerAddress
 	}
@@ -46,5 +47,5 @@ func (config *AgentConfig) envLoader() {
 	if envKryptoKey := os.Getenv("CRYPTO_KEY"); envKryptoKey != "" {
 		config.KeyFile = envKryptoKey
 	}
-	config.Logger.Debug("Config loaded from environment variables")
+	logger.Debug("Config loaded from environment variables")
 }

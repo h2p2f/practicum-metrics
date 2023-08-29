@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
+	"go.uber.org/zap"
 	"log"
 	"os"
 )
@@ -23,8 +24,8 @@ func isSet(fs *flag.FlagSet, name string) bool {
 // flagLoader - функция загрузки конфигурации из флагов
 //
 // flagLoader - function of loading configuration from flags
-func (config *ServerConfig) flagLoader() {
-	config.Logger.Debug("Loading config from flags")
+func (config *ServerConfig) flagLoader(logger *zap.Logger) {
+	logger.Debug("Loading config from flags")
 	useJSONConfig := false
 	var jsonConfigPath string
 	jsonConfFS := flag.NewFlagSet("json", flag.ContinueOnError)
@@ -32,7 +33,7 @@ func (config *ServerConfig) flagLoader() {
 	jsonConfFS.StringVar(&jsonConfigPath, "config", "./config/agent.json", "config file")
 	err := jsonConfFS.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
-		log.Println(err)
+		logger.Error("failed to parse json config flag", zap.Error(err))
 	}
 	if isSet(jsonConfFS, "c") || isSet(jsonConfFS, "config") {
 		useJSONConfig = true
@@ -44,22 +45,24 @@ func (config *ServerConfig) flagLoader() {
 	if useJSONConfig {
 		jsonFile, err := os.ReadFile(jsonConfigPath)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal("failed to read json config file", zap.Error(err))
 		}
 		err = json.Unmarshal(jsonFile, &config)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal("failed to parse json config file", zap.Error(err))
 		}
+		logger.Info("json config loaded successfully")
+		config.Params.jsonLoaded = true
 	}
 
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)
-	fs.StringVar(&config.Address, "a", config.Address, "Server address")
+	fs.StringVar(&config.Params.Address, "a", config.Params.Address, "Server address")
 	fs.StringVar(&config.File.Path, "f", config.File.Path, "File path")
 	fs.DurationVar(&config.File.StoreInterval, "i", config.File.StoreInterval, "Store interval")
 	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
 	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
-	fs.StringVar(&config.Key, "k", config.Key, "Key")
-	fs.StringVar(&config.KeyFile, "crypto-key", config.KeyFile, "RSA key file")
+	fs.StringVar(&config.Params.Key, "k", config.Params.Key, "Key")
+	fs.StringVar(&config.Params.KeyFile, "crypto-key", config.Params.KeyFile, "RSA key file")
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		log.Println(err)
@@ -71,9 +74,9 @@ func (config *ServerConfig) flagLoader() {
 		config.DB.UsePG = true
 	}
 	if !isSet(fs, "k") {
-		config.Key = ""
+		config.Params.Key = ""
 	}
-	if !isSet(fs, "crypto-key") {
-		config.KeyFile = ""
+	if !isSet(fs, "crypto-key") && !config.Params.jsonLoaded && config.Params.LogLevel != "debug" {
+		config.Params.KeyFile = ""
 	}
 }

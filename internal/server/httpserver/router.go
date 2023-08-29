@@ -1,5 +1,3 @@
-// Package httpserver реализует обработчики запросов к серверу.
-//
 // Package httpserver implements handlers for server requests.
 package httpserver
 
@@ -21,8 +19,6 @@ import (
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/loggermiddleware"
 )
 
-// DataBaser - интерфейс для работы с хранилищем данных.
-//
 // DataBaser is an interface for working with a data store.
 type DataBaser interface {
 	SetCounter(key string, value int64)
@@ -34,38 +30,31 @@ type DataBaser interface {
 	Ping() error
 }
 
-// DataBase - структура для работы с хранилищем данных.
-//
 // DataBase is a structure for working with a data store.
 type DataBase struct {
 	DataBaser
 }
 
-// NewDataBase - конструктор для DataBase.
-//
 // NewDataBase is a constructor for DataBase.
 func NewDataBase(db DataBaser) *DataBase {
 	return &DataBase{db}
 }
 
-// MetricRouter - конструктор для роутера.
-//
 // MetricRouter is a constructor for the router.
 func MetricRouter(logger *zap.Logger, m DataBaser, config *config.ServerConfig) *chi.Mux {
 	db := NewDataBase(m)
 	r := chi.NewRouter()
-	//регистрация middleware
-	//
+
 	// middleware registration
-	r.Use(decryptormiddleware.DecryptMiddleware(config.PrivateKey))
+	//r.Use(ipcheckermiddleware.IpCheckMiddleware(logger, config.Params.TrustSubnet))
+	r.Use(decryptormiddleware.DecryptMiddleware(config.Params.PrivateKey))
 	r.Use(loggermiddleware.LogMiddleware(logger))
 	r.Use(compressormiddleware.ZipMiddleware)
 
-	if config.Key != "" {
-		r.Use(hashmiddleware.HashMiddleware(logger, config.Key))
+	if config.Params.Key != "" {
+		r.Use(hashmiddleware.HashMiddleware(logger, config.Params.Key))
 	}
-	//регистрация профайлера
-	//
+
 	// profiler registration
 	r.Mount("/debug", middleware.Profiler())
 
