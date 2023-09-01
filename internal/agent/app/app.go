@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient"
-	"github.com/h2p2f/practicum-metrics/proto"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -173,7 +173,7 @@ func (app *App) sendGRPCWithRateLimit(ctx context.Context) {
 			return
 		case <-t.C:
 			app.logger.Debug("Getting metrics from the in-memory database")
-			var data []proto.Metric
+			var data []*pb.Metric
 
 			conn, err := grpc.Dial(
 				app.config.ServerAddress,
@@ -188,14 +188,14 @@ func (app *App) sendGRPCWithRateLimit(ctx context.Context) {
 			gauges := app.db.GetAllGauge()
 			counters := app.db.GetAllCounter()
 			for metric, value := range gauges {
-				data = append(data, proto.Metric{
+				data = append(data, &pb.Metric{
 					Name:  metric,
 					Gauge: value,
 					Type:  "gauge",
 				})
 			}
 			for metric, value := range counters {
-				data = append(data, proto.Metric{
+				data = append(data, &pb.Metric{
 					Name:    metric,
 					Counter: value,
 					Type:    "counter",
@@ -204,7 +204,7 @@ func (app *App) sendGRPCWithRateLimit(ctx context.Context) {
 
 			app.logger.Info("Sending metrics to the GRPC server one metric at a time")
 			// create channels for workers
-			jobs := make(chan pb.Metric, len(data))
+			jobs := make(chan *pb.Metric, len(data))
 			done := make(chan bool, len(data))
 			// start workers
 			for w := 1; w <= app.config.RateLimit; w++ {
@@ -247,18 +247,18 @@ func (app *App) sendGRPCWithoutRateLimit(ctx context.Context) {
 
 			c := pb.NewMetricsServiceClient(conn)
 
-			var data []*proto.Metric
+			var data []*pb.Metric
 			gauges := app.db.GetAllGauge()
 			counters := app.db.GetAllCounter()
 			for metric, value := range gauges {
-				data = append(data, &proto.Metric{
+				data = append(data, &pb.Metric{
 					Name:  metric,
 					Gauge: value,
 					Type:  "gauge",
 				})
 			}
 			for metric, value := range counters {
-				data = append(data, &proto.Metric{
+				data = append(data, &pb.Metric{
 					Name:    metric,
 					Counter: value,
 					Type:    "counter",

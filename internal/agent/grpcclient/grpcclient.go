@@ -5,17 +5,16 @@ import (
 	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
-func GRPCSendMetric(c pb.MetricsServiceClient, mCh <-chan pb.Metric, done chan<- bool) error {
+func GRPCSendMetric(c pb.MetricsServiceClient, mCh <-chan *pb.Metric, done chan<- bool) error {
 
 	var err error
 	for m := range mCh {
-		_, err := c.UpdateMetric(context.Background(), &pb.UpdateMetricRequest{Metric: &m})
+		_, err := c.UpdateMetric(context.Background(), &pb.UpdateMetricRequest{Metric: m})
 		if err != nil {
 			return err
 		}
 		done <- true
 	}
-
 	return err
 }
 
