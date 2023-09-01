@@ -48,17 +48,17 @@ func (config *ServerConfig) flagLoader(logger *zap.Logger) {
 			logger.Fatal("failed to parse json config file", zap.Error(err))
 		}
 		logger.Info("json config loaded successfully")
-		config.Params.jsonLoaded = true
+		config.HTTP.jsonLoaded = true
 	}
 
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)
-	fs.StringVar(&config.Params.Address, "a", config.Params.Address, "Server address")
+	fs.StringVar(&config.HTTP.Address, "a", config.HTTP.Address, "Server address")
 	fs.StringVar(&config.File.Path, "f", config.File.Path, "File path")
 	fs.DurationVar(&config.File.StoreInterval, "i", config.File.StoreInterval, "Store interval")
 	fs.BoolVar(&config.File.Restore, "r", config.File.Restore, "Restore")
 	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
-	fs.StringVar(&config.Params.Key, "k", config.Params.Key, "Key")
-	fs.StringVar(&config.Params.KeyFile, "crypto-key", config.Params.KeyFile, "RSA key file")
+	fs.StringVar(&config.HTTP.Key, "k", config.HTTP.Key, "Key")
+	fs.StringVar(&config.HTTP.KeyFile, "crypto-key", config.HTTP.KeyFile, "RSA key file")
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		log.Println(err)
@@ -70,9 +70,9 @@ func (config *ServerConfig) flagLoader(logger *zap.Logger) {
 		config.DB.UsePG = true
 	}
 	if !isSet(fs, "k") {
-		config.Params.Key = ""
+		config.HTTP.Key = ""
 	}
-	if !isSet(fs, "crypto-key") && !config.Params.jsonLoaded && config.Params.LogLevel != "debug" {
-		config.Params.KeyFile = ""
+	if !isSet(fs, "crypto-key") && !config.HTTP.jsonLoaded && config.LogLevel != "debug" {
+		config.HTTP.KeyFile = ""
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/decryptormiddleware"
+	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/middlewares/ipcheckermiddleware"
 	"go.uber.org/zap"
 
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver/handlers/dbping"
@@ -46,13 +47,13 @@ func MetricRouter(logger *zap.Logger, m DataBaser, config *config.ServerConfig) 
 	r := chi.NewRouter()
 
 	// middleware registration
-	//r.Use(ipcheckermiddleware.IpCheckMiddleware(logger, config.Params.TrustSubnet))
-	r.Use(decryptormiddleware.DecryptMiddleware(config.Params.PrivateKey))
+	r.Use(ipcheckermiddleware.IPCheckMiddleware(logger, config.HTTP.TrustSubnet))
+	r.Use(decryptormiddleware.DecryptMiddleware(config.HTTP.PrivateKey))
 	r.Use(loggermiddleware.LogMiddleware(logger))
 	r.Use(compressormiddleware.ZipMiddleware)
 
-	if config.Params.Key != "" {
-		r.Use(hashmiddleware.HashMiddleware(logger, config.Params.Key))
+	if config.HTTP.Key != "" {
+		r.Use(hashmiddleware.HashMiddleware(logger, config.HTTP.Key))
 	}
 
 	// profiler registration

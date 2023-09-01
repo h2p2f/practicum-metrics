@@ -6,14 +6,14 @@ import (
 )
 
 func (config *ServerConfig) subnetLoader(logger *zap.Logger) {
-	if config.Params.TrustSubnetString != "" {
-		_, trustSubnet, err := net.ParseCIDR(config.Params.TrustSubnetString)
+	if config.HTTP.TrustSubnetString != "" {
+		_, trustSubnet, err := net.ParseCIDR(config.HTTP.TrustSubnetString)
 		if err != nil {
 			logger.Fatal("Failed to parse trust subnet", zap.Error(err))
 		}
-		config.Params.TrustSubnet = trustSubnet
+		config.HTTP.TrustSubnet = trustSubnet
 	} else {
 		logger.Debug("No trust subnet provided")
-		config.Params.TrustSubnet = nil
+		config.HTTP.TrustSubnet = nil
 	}
 }

@@ -28,20 +28,20 @@ func TestCryptoLoader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config.Params.KeyFile = tt.file
+			config.HTTP.KeyFile = tt.file
 			err := config.cryptoLoader(logger)
 			if tt.result {
 				if err != nil {
 					t.Errorf("expected no error, but got %v", err)
 				}
-				if config.Params.PrivateKey == nil {
+				if config.HTTP.PrivateKey == nil {
 					t.Errorf("private RSA key should not be nil")
 				}
 			} else {
 				if err == nil {
 					t.Errorf("expected error, but got nil")
 				}
-				if config.Params.PrivateKey != nil {
+				if config.HTTP.PrivateKey != nil {
 					t.Errorf("private RSA key should be nil")
 				}
 			}

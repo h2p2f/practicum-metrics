@@ -24,6 +24,7 @@ type AgentConfig struct {
 	RetryWaitTime  time.Duration `yaml:"retry_wait_time"`
 	ReportInterval time.Duration `yaml:"report" json:"report_interval"`
 	PollInterval   time.Duration `yaml:"poll" json:"poll_interval"`
+	UseGRPC        bool          `yaml:"use_grpc" json:"use_grpc"`
 	jsonLoaded     bool
 	PublicKey      *rsa.PublicKey
 	Logger         *zap.Logger

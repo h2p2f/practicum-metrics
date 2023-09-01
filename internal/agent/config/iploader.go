@@ -13,7 +13,7 @@ func (config *AgentConfig) ipLoader() {
 	for _, addr := range addrs {
 		//fmt.Println(addr)
 		if ip, ok := addr.(*net.IPNet); ok {
-			if ip.IP.IsGlobalUnicast() {
+			if ip.IP.IsGlobalUnicast() && ip.IP.To4() != nil {
 				config.IPaddr = &ip.IP
 				break
 			}

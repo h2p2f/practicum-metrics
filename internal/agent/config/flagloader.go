@@ -41,10 +41,12 @@ func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 		jsonFile, err := os.ReadFile(jsonConfigPath)
 		if err != nil {
 			logger.Error("Failed to read json config file", zap.Error(err))
+			return
 		}
 		err = json.Unmarshal(jsonFile, &config)
 		if err != nil {
 			logger.Error("Failed to parse json config file", zap.Error(err))
+			return
 		}
 		config.jsonLoaded = true
 	}
@@ -61,6 +63,7 @@ func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		logger.Error("Failed to parse flags", zap.Error(err))
+		return
 	}
 
 	//if the key is not set - zero it

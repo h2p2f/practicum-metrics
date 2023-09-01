@@ -7,6 +7,10 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
+	pb "github.com/h2p2f/practicum-metrics/proto"
+	"google.golang.org/grpc"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -72,8 +76,8 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 	}
 	// collect fields for logger
 	fields := []zapcore.Field{
-		zap.String("address", conf.Params.Address),
-		zap.String("log_level", conf.Params.LogLevel),
+		zap.String("address", conf.HTTP.Address),
+		zap.String("log_level", conf.LogLevel),
 	}
 	if conf.DB.UsePG {
 		fields = append(fields, zap.String("postgreSQL", conf.DB.Dsn))
@@ -82,10 +86,10 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 		fields = append(fields, zap.String("store_interval", conf.File.StoreInterval.String()))
 		fields = append(fields, zap.Bool("restore_file", conf.File.Restore))
 	}
-	logger.Info("Started server", fields...)
+	logger.Info("Started http server", fields...)
 	// create http server
 	srv := &http.Server{
-		Addr:    conf.Params.Address,
+		Addr:    conf.HTTP.Address,
 		Handler: httpserver.MetricRouter(logger, db, conf),
 	}
 	// start http server
@@ -94,6 +98,22 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 			logger.Fatal("listen", zap.Error(err))
 		}
 	}()
+	logger.Info("Started grpc server", zap.String("address", conf.GRPC.Address))
+	listen, err := net.Listen("tcp", conf.GRPC.Address)
+	if err != nil {
+		logger.Fatal("listen", zap.Error(err))
+	}
+
+	grpcServer := grpc.NewServer()
+	grpcMetrics := grpcserver.NewServer(db, logger)
+	pb.RegisterMetricsServiceServer(grpcServer, grpcMetrics)
+
+	go func() {
+		if err := grpcServer.Serve(listen); err != nil {
+			logger.Fatal("listen", zap.Error(err))
+		}
+	}()
+
 	// wait for done signal
 	<-sigint
 	logger.Info("Shutting down server...")

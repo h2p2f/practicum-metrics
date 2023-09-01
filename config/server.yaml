@@ -1,9 +1,9 @@
-server:
-  log_level: debug
+log_level: debug
+http_server:
   host: localhost:8080
   key: key
   key_file: ./crypto/private.rsa
-  trust_subnet: 0.0.0.0/16
+  trust_subnet: 192.168.5.0/24
 file_storage:
   path: /tmp/metrics-db.json
   flush_interval: 10s
@@ -12,3 +12,5 @@ file_storage:
 database:
   dsn: postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable
   use_pg: false
+grpc_server:
+  host: localhost:8081

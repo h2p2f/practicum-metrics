@@ -84,3 +84,15 @@ func (m *MetricStorage) BatchJSONMetrics() []byte {
 	m.counter["PollCount"] = 0
 	return res
 }
+
+func (m *MetricStorage) GetAllGauge() map[string]float64 {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+	return m.gauge
+}
+
+func (m *MetricStorage) GetAllCounter() map[string]int64 {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+	return m.counter
+}

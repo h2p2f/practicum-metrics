@@ -16,7 +16,7 @@ import (
 )
 
 // SendBatchJSONMetrics sends metrics to the server in JSON format in batch mode.
-func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data []byte, checkSum [32]byte) error {
+func SendBatchJSONMetrics(ctx context.Context, logger *zap.Logger, config *config.AgentConfig, data []byte, checkSum [32]byte) error {
 	toSend, err := compressor.Compress(data)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data [
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	client := resty.New()
 
@@ -41,7 +41,7 @@ func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data [
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
-		SetHeader("Content-Encoding", "gzip").
+		SetHeader("X-Real-IP", config.IPaddr.String()).
 		SetHeaderVerbatim("HashSHA256", fmt.Sprintf("%x", hash)).
 		SetBody(toSend).
 		Post("http://" + config.ServerAddress + "/updates/")
@@ -54,7 +54,13 @@ func SendBatchJSONMetrics(logger *zap.Logger, config *config.AgentConfig, data [
 }
 
 // SendMetric sends a metric to the server. Used by workers.
-func SendMetric(logger *zap.Logger, data []byte, checkSum [32]byte, config *config.AgentConfig) error {
+func SendMetric(
+	ctx context.Context,
+	logger *zap.Logger,
+	data []byte,
+	checkSum [32]byte,
+	config *config.AgentConfig) error {
+
 	toSend, err := compressor.Compress(data)
 	if err != nil {
 		return err
@@ -68,12 +74,13 @@ func SendMetric(logger *zap.Logger, data []byte, checkSum [32]byte, config *conf
 			return err
 		}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	resp, err := client.R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
+		SetHeader("X-Real-IP", config.IPaddr.String()).
 		SetHeaderVerbatim("HashSHA256", hash).
 		SetBody(toSend).
 		Post("http://" + config.ServerAddress + "/update/")

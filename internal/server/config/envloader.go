@@ -11,7 +11,7 @@ import (
 func (config *ServerConfig) envLoader(logger *zap.Logger) {
 
 	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		config.Params.Address = envAddress
+		config.HTTP.Address = envAddress
 	}
 	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
 		config.File.Path = envFilePath
@@ -35,7 +35,7 @@ func (config *ServerConfig) envLoader(logger *zap.Logger) {
 		config.DB.UsePG = true
 	}
 	if envKey := os.Getenv("KEY"); envKey != "" {
-		config.Params.Key = envKey
+		config.HTTP.Key = envKey
 	}
 
 }

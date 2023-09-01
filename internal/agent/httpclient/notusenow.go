@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -11,7 +12,7 @@ import (
 
 // Deprecated:SendJSONMetrics sends metrics to the server in JSON format one metric at a time.
 // Required for backward compatibility. Currently not used.
-func SendJSONMetrics(logger *zap.Logger, data [][]byte, addr string) error {
+func SendJSONMetrics(ctx context.Context, logger *zap.Logger, data [][]byte, addr string) error {
 	for _, d := range data {
 		var metric models.Metric
 		zipped, err := compressor.Compress(d)
@@ -20,6 +21,7 @@ func SendJSONMetrics(logger *zap.Logger, data [][]byte, addr string) error {
 		}
 		client := resty.New()
 		resp, err := client.R().
+			SetContext(ctx).
 			SetHeader("Content-Type", "application/json").
 			SetHeader("Content-Encoding", "gzip").
 			SetBody(zipped).

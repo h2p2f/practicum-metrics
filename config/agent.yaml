@@ -1,5 +1,5 @@
 log_level: debug
-server: localhost:8080
+server: localhost:8081
 poll: 2s
 report: 10s
 key: key
@@ -7,3 +7,4 @@ rate_limit: 0
 key_file: ./crypto/public.rsa
 retry_count: 3
 retry_wait_time: 1s
+use_grpc: true

@@ -5,6 +5,10 @@ package app
 import (
 	"context"
 	"errors"
+	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient"
+	"github.com/h2p2f/practicum-metrics/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	_ "net/http/pprof"
 	"os"
@@ -18,10 +22,11 @@ import (
 	hash2 "github.com/h2p2f/practicum-metrics/internal/agent/hash"
 	"github.com/h2p2f/practicum-metrics/internal/agent/httpclient"
 	"github.com/h2p2f/practicum-metrics/internal/agent/storage"
+	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
 // SendOneMetric sends metrics to the server in a worker pool one metric at a time
-func SendOneMetric(logger *zap.Logger, config *config.AgentConfig, mCh <-chan []byte, done chan<- bool) {
+func SendOneMetric(ctx context.Context, logger *zap.Logger, config *config.AgentConfig, mCh <-chan []byte, done chan<- bool) {
 
 	// wait for metric
 	for m := range mCh {
@@ -36,7 +41,7 @@ func SendOneMetric(logger *zap.Logger, config *config.AgentConfig, mCh <-chan []
 		}
 
 		// send metric
-		err := httpclient.SendMetric(logger, m, hash, config)
+		err := httpclient.SendMetric(ctx, logger, m, hash, config)
 		if err != nil {
 			logger.Error("Error sending metrics: %s",
 				zap.Error(err))
@@ -55,24 +60,34 @@ func SendOneMetric(logger *zap.Logger, config *config.AgentConfig, mCh <-chan []
 // getRuntimeMetrics launches memory metrics monitoring
 func getRuntimeMetrics(ctx context.Context, m *storage.MetricStorage, poolTime time.Duration) {
 	t := time.NewTicker(poolTime)
-	select {
-	case <-ctx.Done():
-		t.Stop()
-		return
-	case <-t.C:
-		m.RuntimeMetricsMonitor()
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			if ctx.Err() != nil {
+				return
+			}
+			m.RuntimeMetricsMonitor()
+		}
 	}
 }
 
 // getGopsUtilMetrics launches gops metrics monitoring
 func getGopsUtilMetrics(ctx context.Context, m *storage.MetricStorage, poolTime time.Duration) {
 	t := time.NewTicker(poolTime)
-	select {
-	case <-ctx.Done():
-		t.Stop()
-		return
-	case <-t.C:
-		m.GopsUtilizationMonitor()
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			if ctx.Err() != nil {
+				return
+			}
+			m.GopsUtilizationMonitor()
+		}
 	}
 }
 
@@ -80,6 +95,184 @@ type App struct {
 	db     *storage.MetricStorage
 	config *config.AgentConfig
 	logger *zap.Logger
+}
+
+// sendHTTPWithRateLimit sends metrics to the server one at a time in a goroutine pool,
+// the number of which is limited by the RateLimit parameter
+func (app *App) sendHTTPWithRateLimit(ctx context.Context) {
+	app.logger.Info("Sending metrics with rate limit")
+	t := time.NewTicker(app.config.ReportInterval)
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			if ctx.Err() != nil {
+				return
+			}
+			data := app.db.JSONMetrics()
+			app.logger.Info("Sending metrics to the server in json one metric at a time")
+			// create channels for workers
+			jobs := make(chan []byte, len(data))
+			done := make(chan bool, len(data))
+			// start workers
+			for w := 1; w <= app.config.RateLimit; w++ {
+				go SendOneMetric(ctx, app.logger, app.config, jobs, done)
+			}
+			// send metrics to channel
+			for _, metric := range data {
+				jobs <- metric
+			}
+			// close channels
+			close(jobs)
+			// wait for workers to finish
+			for range data {
+				<-done
+			}
+			close(done)
+		}
+	}
+}
+
+// sendHTTPWithoutRateLimit sends metrics to the server in batches in json
+func (app *App) sendHTTPWithoutRateLimit(ctx context.Context) {
+	app.logger.Info("Sending metrics to the server in batches in json")
+	t := time.NewTicker(app.config.ReportInterval)
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			if ctx.Err() != nil {
+				return
+			}
+			data := app.db.BatchJSONMetrics()
+			// calculate hash
+			var hash [32]byte
+			if app.config.Key != "" {
+				hash = hash2.GetHash(data)
+			}
+			// send metrics
+			err := httpclient.SendBatchJSONMetrics(ctx, app.logger, app.config, data, hash)
+			if err != nil {
+				app.logger.Error("Error sending metrics: ", zap.Error(err))
+			}
+		}
+	}
+}
+
+func (app *App) sendGRPCWithRateLimit(ctx context.Context) {
+	app.logger.Info("Sending metrics with rate limit")
+	t := time.NewTicker(app.config.ReportInterval)
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			app.logger.Debug("Getting metrics from the in-memory database")
+			var data []proto.Metric
+
+			conn, err := grpc.Dial(
+				app.config.ServerAddress,
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+			if err != nil {
+				app.logger.Error("Error connecting to GRPC server: ", zap.Error(err))
+			}
+
+			c := pb.NewMetricsServiceClient(conn)
+
+			gauges := app.db.GetAllGauge()
+			counters := app.db.GetAllCounter()
+			for metric, value := range gauges {
+				data = append(data, proto.Metric{
+					Name:  metric,
+					Gauge: value,
+					Type:  "gauge",
+				})
+			}
+			for metric, value := range counters {
+				data = append(data, proto.Metric{
+					Name:    metric,
+					Counter: value,
+					Type:    "counter",
+				})
+			}
+
+			app.logger.Info("Sending metrics to the GRPC server one metric at a time")
+			// create channels for workers
+			jobs := make(chan pb.Metric, len(data))
+			done := make(chan bool, len(data))
+			// start workers
+			for w := 1; w <= app.config.RateLimit; w++ {
+				go grpcclient.GRPCSendMetric(c, jobs, done)
+			}
+			// send metrics to channel
+			for _, metric := range data {
+				jobs <- metric
+			}
+			// close channels
+			close(jobs)
+			// wait for workers to finish
+			for range data {
+				<-done
+			}
+			close(done)
+
+			app.logger.Debug("Metrics sent to the GRPC server")
+			conn.Close()
+		}
+	}
+}
+
+func (app *App) sendGRPCWithoutRateLimit(ctx context.Context) {
+	app.logger.Info("Sending metrics to the GRPC server in batches in json")
+	t := time.NewTicker(app.config.ReportInterval)
+	for {
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			conn, err := grpc.Dial(
+				app.config.ServerAddress,
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+			if err != nil {
+				app.logger.Error("Error connecting to GRPC server: ", zap.Error(err))
+			}
+
+			c := pb.NewMetricsServiceClient(conn)
+
+			var data []*proto.Metric
+			gauges := app.db.GetAllGauge()
+			counters := app.db.GetAllCounter()
+			for metric, value := range gauges {
+				data = append(data, &proto.Metric{
+					Name:  metric,
+					Gauge: value,
+					Type:  "gauge",
+				})
+			}
+			for metric, value := range counters {
+				data = append(data, &proto.Metric{
+					Name:    metric,
+					Counter: value,
+					Type:    "counter",
+				})
+			}
+			app.logger.Debug("Sending metrics to the GRPC server in batches")
+			// send metrics
+			err = grpcclient.GRPCSendMetrics(c, data)
+			if err != nil {
+				app.logger.Error("Error sending metrics: ", zap.Error(err))
+			}
+			conn.Close()
+		}
+	}
 }
 
 // Run launches the agent
@@ -125,10 +318,19 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 
 	// start sending metrics to the server depending on the limit
 	if conf.RateLimit > 0 {
-		go app.sendWithRateLimit(ctx)
+		if conf.UseGRPC {
+			go app.sendGRPCWithRateLimit(ctx)
+		} else {
+			go app.sendHTTPWithRateLimit(ctx)
+		}
 	} else {
+		if conf.UseGRPC {
+			go app.sendGRPCWithoutRateLimit(ctx)
+		} else {
+			go app.sendHTTPWithoutRateLimit(ctx)
+		}
 		// if the limit is not set - send metrics in batches in json to the server
-		go app.sendWithoutRateLimit(ctx)
+		//go app.sendHTTPWithoutRateLimit(ctx)
 	}
 
 	// wait for done signal
@@ -142,66 +344,4 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 		logger.Info("Agent shutdown gracefully")
 		close(connectionsClosed)
 	}
-}
-
-// sendWithRateLimit sends metrics to the server one at a time in a goroutine pool,
-// the number of which is limited by the RateLimit parameter
-func (app *App) sendWithRateLimit(ctx context.Context) {
-	app.logger.Info("Sending metrics with rate limit")
-	t := time.NewTicker(app.config.ReportInterval)
-	for {
-		select {
-		case <-ctx.Done():
-			t.Stop()
-			return
-		case <-t.C:
-			app.logger.Info("tick")
-			data := app.db.JSONMetrics()
-			app.logger.Info("Sending metrics to the server in json one metric at a time")
-			// create channels for workers
-			jobs := make(chan []byte, len(data))
-			done := make(chan bool, len(data))
-			// start workers
-			for w := 1; w <= app.config.RateLimit; w++ {
-				go SendOneMetric(app.logger, app.config, jobs, done)
-			}
-			// send metrics to channel
-			for _, metric := range data {
-				jobs <- metric
-			}
-			// close channels
-			close(jobs)
-			// wait for workers to finish
-			for range data {
-				<-done
-			}
-			close(done)
-		}
-	}
-}
-
-// sendWithoutRateLimit sends metrics to the server in batches in json
-func (app *App) sendWithoutRateLimit(ctx context.Context) {
-	app.logger.Info("Sending metrics to the server in batches in json")
-	t := time.NewTicker(app.config.ReportInterval)
-	for {
-		select {
-		case <-ctx.Done():
-			t.Stop()
-			return
-		case <-t.C:
-			data := app.db.BatchJSONMetrics()
-			// calculate hash
-			var hash [32]byte
-			if app.config.Key != "" {
-				hash = hash2.GetHash(data)
-			}
-			// send metrics
-			err := httpclient.SendBatchJSONMetrics(app.logger, app.config, data, hash)
-			if err != nil {
-				app.logger.Error("Error sending metrics: ", zap.Error(err))
-			}
-		}
-	}
-
 }

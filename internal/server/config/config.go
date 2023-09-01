@@ -13,14 +13,15 @@ import (
 
 // ServerConfig - server configuration structure
 type ServerConfig struct {
-	Params ServerParams      `yaml:"server"`
-	DB     DatabaseConfig    `yaml:"database"`
-	File   FileStorageConfig `yaml:"file_storage"`
+	LogLevel string            `yaml:"log_level"`
+	HTTP     HTTPServerParams  `yaml:"http_server"`
+	GRPC     GRPCServerParams  `yaml:"grpc_server"`
+	DB       DatabaseConfig    `yaml:"database"`
+	File     FileStorageConfig `yaml:"file_storage"`
 }
 
 // ServerParams - server parameters structure
-type ServerParams struct {
-	LogLevel          string `yaml:"log_level"`
+type HTTPServerParams struct {
 	Address           string `yaml:"host" json:"address"`
 	Key               string `yaml:"key"`
 	KeyFile           string `yaml:"key_file" json:"crypto_key"`
@@ -44,11 +45,15 @@ type DatabaseConfig struct {
 	UsePG bool   `yaml:"use_pg"`
 }
 
+type GRPCServerParams struct {
+	Address string `yaml:"host" json:"grpc_address"`
+}
+
 // GetConfig - function of obtaining the server configuration, processes the yaml file, flags and environment variables
 func GetConfig() (*ServerConfig, *zap.Logger, error) {
 
 	var config ServerConfig
-	config.Params.jsonLoaded = false
+	config.HTTP.jsonLoaded = false
 	path := "./config/server.yaml"
 	// read the default config from the yaml file
 	config.yamlLoader(path)
@@ -57,12 +62,12 @@ func GetConfig() (*ServerConfig, *zap.Logger, error) {
 	// (production run) - remove the crypto key from the default configuration
 	// in this case, it can be connected by the launch flag
 	// or environment variable
-	if config.Params.LogLevel == "info" || config.Params.LogLevel == "warn" || config.Params.LogLevel == "error" {
-		config.Params.KeyFile = ""
+	if config.LogLevel == "info" || config.LogLevel == "warn" || config.LogLevel == "error" {
+		config.HTTP.KeyFile = ""
 	}
 
 	// configure logger
-	atom, err := zap.ParseAtomicLevel(config.Params.LogLevel)
+	atom, err := zap.ParseAtomicLevel(config.LogLevel)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,7 +88,7 @@ func GetConfig() (*ServerConfig, *zap.Logger, error) {
 	err = config.cryptoLoader(logger)
 	if err != nil {
 		logger.Error("failed to load crypto key", zap.Error(err))
-		config.Params.PrivateKey = nil
+		config.HTTP.PrivateKey = nil
 	}
 	// load trusted subnets
 	config.subnetLoader(logger)
