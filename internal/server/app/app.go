@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/middlewares"
 	pb "github.com/h2p2f/practicum-metrics/proto"
 	"google.golang.org/grpc"
 	"net"
@@ -98,16 +99,22 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 			logger.Fatal("listen", zap.Error(err))
 		}
 	}()
+	// create grpc server
 	logger.Info("Started grpc server", zap.String("address", conf.GRPC.Address))
 	listen, err := net.Listen("tcp", conf.GRPC.Address)
 	if err != nil {
 		logger.Fatal("listen", zap.Error(err))
 	}
+	// create grpc server with middlewares
+	var opts []grpc.ServerOption
+	//opts = middlewares.WithLogging(logger, opts)
+	//opts = middlewares.WithCheckingIP(conf.HTTP.TrustSubnet, opts)
+	opts = middlewares.WithChekingIPAndLogging(logger, conf.HTTP.TrustSubnet, opts)
+	grpcServer := grpc.NewServer(opts...)
 
-	grpcServer := grpc.NewServer()
 	grpcMetrics := grpcserver.NewServer(db, logger)
 	pb.RegisterMetricsServiceServer(grpcServer, grpcMetrics)
-
+	// start grpc server
 	go func() {
 		if err := grpcServer.Serve(listen); err != nil {
 			logger.Fatal("listen", zap.Error(err))

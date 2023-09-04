@@ -1,3 +1,5 @@
+// Package: ipcheckermiddleware provides a middleware for checking the IP address of the request.
+// IP address taken from the X-Real-IP header.
 package ipcheckermiddleware
 
 import (

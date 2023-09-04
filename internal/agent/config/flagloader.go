@@ -58,6 +58,7 @@ func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 	fs.StringVar(&config.Key, "k", config.Key, "Key")
 	fs.StringVar(&config.KeyFile, "crypto-key", config.KeyFile, "RSA key file")
 	fs.IntVar(&config.RateLimit, "l", config.RateLimit, "Rate limit")
+	fs.BoolVar(&config.UseGRPC, "grpc", config.UseGRPC, "Use gRPC")
 
 	// parse flags
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
@@ -72,6 +73,9 @@ func (config *AgentConfig) flagLoader(logger *zap.Logger) {
 	}
 	if !isSet(fs, "crypto-key") && !config.jsonLoaded && config.LogLevel != "debug" {
 		config.KeyFile = ""
+	}
+	if !isSet(fs, "grpc") {
+		config.UseGRPC = false
 	}
 
 	logger.Debug("Config loaded from flags")

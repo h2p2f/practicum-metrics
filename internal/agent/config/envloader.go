@@ -46,5 +46,8 @@ func (config *AgentConfig) envLoader(logger *zap.Logger) {
 	if envKryptoKey := os.Getenv("CRYPTO_KEY"); envKryptoKey != "" {
 		config.KeyFile = envKryptoKey
 	}
+	if useGRPC := os.Getenv("USE_GRPC"); useGRPC != "" {
+		config.UseGRPC, _ = strconv.ParseBool(useGRPC)
+	}
 	logger.Debug("Config loaded from environment variables")
 }

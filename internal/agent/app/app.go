@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient"
+	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient/middlewares"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -178,6 +179,7 @@ func (app *App) sendGRPCWithRateLimit(ctx context.Context) {
 			conn, err := grpc.Dial(
 				app.config.ServerAddress,
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithUnaryInterceptor(middlewares.IPInjectorUnaryClientInterceptor(app.config.IPaddr)),
 			)
 			if err != nil {
 				app.logger.Error("Error connecting to GRPC server: ", zap.Error(err))
@@ -270,7 +272,10 @@ func (app *App) sendGRPCWithoutRateLimit(ctx context.Context) {
 			if err != nil {
 				app.logger.Error("Error sending metrics: ", zap.Error(err))
 			}
-			conn.Close()
+			err = conn.Close()
+			if err != nil {
+				return
+			}
 		}
 	}
 }

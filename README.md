@@ -44,7 +44,8 @@ agent - это агент, который отправляет runtime метр�
 - iter 22 - добавлена возможность обработки пользовательской конфигурации агента и сервера из файла в формате JSON. При запуске агента и сервера с флагом ```-config``` или ```-c``` будет использована конфигурация из файла. 
 - iter 23 - подключена обработка сигналов ОС терминации приложения для корректного завершения работы агента и сервера. 
 - --out of scope-- для отладки сервера интерфейсы работы с хранилищем в хендлнрах обернуты при помощи ```gowrap```, написан новый темплейт ```templates/gowrap/zap``` для логгера от Uber
-
+- iter 24 - добавлено ограничение подключения агента к серверу на основе подсети, в которой находится агент.
+- iter 25 - реализована возможность работы агента и сервера по gRPC. Написаны интерсепторы для логгирования и ограничения подключения агента к серверу на основе подсети, в которой находится агент. Добавлены тесты для gRPC сервера.
 --------------------
 
 these apps developed for Yandex.practicum on the Go-developer course
@@ -87,6 +88,7 @@ agent - is an agent that sends runtime metrics to the server.
 - iter 22 - added the ability to process user configuration of the agent and server from a file in JSON format. When the agent and server are started with the ```-config``` or ```-c``` flag, the configuration from the file will be used.
 - iter 23 - connected processing of OS termination signals for correct termination of the agent and server.
 - --out of scope-- for debugging the server, the interfaces for working with the storage in the handlers are wrapped using ```gowrap```, a new template ```templates/gowrap/zap``` is written for the Uber logger
-
+- iter 24 - added connection restriction of the agent to the server based on the subnet in which the agent is located.
+- iter 25 - implemented the ability of the agent and server to work via gRPC. Interceptors for logging and connection restriction of the agent to the server based on the subnet in which the agent is located are written. Added tests for gRPC server.
 
 
