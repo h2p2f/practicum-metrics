@@ -38,4 +38,8 @@ func (config *ServerConfig) envLoader(logger *zap.Logger) {
 		config.HTTP.Key = envKey
 	}
 
+	if envSubnet := os.Getenv("TRUSTED_SUBNET"); envSubnet != "" {
+		config.HTTP.TrustSubnetString = envSubnet
+	}
+
 }

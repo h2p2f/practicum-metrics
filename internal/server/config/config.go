@@ -25,7 +25,7 @@ type HTTPServerParams struct {
 	Address           string `yaml:"host" json:"address"`
 	Key               string `yaml:"key"`
 	KeyFile           string `yaml:"key_file" json:"crypto_key"`
-	TrustSubnetString string `yaml:"trust_subnet"`
+	TrustSubnetString string `yaml:"trust_subnet" json:"trusted_subnet"`
 	jsonLoaded        bool
 	PrivateKey        *rsa.PrivateKey
 	TrustSubnet       *net.IPNet

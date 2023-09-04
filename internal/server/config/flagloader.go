@@ -59,6 +59,7 @@ func (config *ServerConfig) flagLoader(logger *zap.Logger) {
 	fs.StringVar(&config.DB.Dsn, "d", config.DB.Dsn, "Database DSN")
 	fs.StringVar(&config.HTTP.Key, "k", config.HTTP.Key, "Key")
 	fs.StringVar(&config.HTTP.KeyFile, "crypto-key", config.HTTP.KeyFile, "RSA key file")
+	fs.StringVar(&config.HTTP.TrustSubnetString, "t", config.HTTP.TrustSubnetString, "Trusted subnet")
 	err = fs.Parse(os.Args[1:]) //nolint:errcheck
 	if err != nil {
 		log.Println(err)
@@ -74,5 +75,8 @@ func (config *ServerConfig) flagLoader(logger *zap.Logger) {
 	}
 	if !isSet(fs, "crypto-key") && !config.HTTP.jsonLoaded && config.LogLevel != "debug" {
 		config.HTTP.KeyFile = ""
+	}
+	if !isSet(fs, "trusted-subnet") && !config.HTTP.jsonLoaded && config.LogLevel != "debug" {
+		config.HTTP.TrustSubnetString = ""
 	}
 }
