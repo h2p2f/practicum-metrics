@@ -3,9 +3,10 @@
 package ipcheckermiddleware
 
 import (
-	"go.uber.org/zap"
 	"net"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 func IPCheckMiddleware(logger *zap.Logger, subnet *net.IPNet) func(next http.Handler) http.Handler {

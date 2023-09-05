@@ -3,12 +3,14 @@ package grpcserver
 import (
 	"context"
 	"errors"
-	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/mocks"
-	pb "github.com/h2p2f/practicum-metrics/proto"
+	"testing"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"testing"
+
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/mocks"
+	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
 func TestServer_UpdateMetric(t *testing.T) {

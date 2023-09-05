@@ -3,9 +3,10 @@ package middlewares
 
 import (
 	"context"
+	"net"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"net"
 )
 
 // IPInjectorUnaryClientInterceptor adds IP to metadata

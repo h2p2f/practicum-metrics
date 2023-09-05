@@ -3,6 +3,7 @@ package grpcclient
 
 import (
 	"context"
+
 	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 

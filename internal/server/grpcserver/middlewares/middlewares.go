@@ -3,6 +3,8 @@ package middlewares
 
 import (
 	"context"
+	"net"
+
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -10,7 +12,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"net"
 )
 
 // codeToLevel function for converting grpc codes to zap levels

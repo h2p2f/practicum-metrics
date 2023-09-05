@@ -5,21 +5,19 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient"
-	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient/middlewares"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	_ "net/http/pprof"
 	"os"
 	"syscall"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/h2p2f/practicum-metrics/internal/agent/config"
+	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient"
+	"github.com/h2p2f/practicum-metrics/internal/agent/grpcclient/middlewares"
 	hash2 "github.com/h2p2f/practicum-metrics/internal/agent/hash"
 	"github.com/h2p2f/practicum-metrics/internal/agent/httpclient"
 	"github.com/h2p2f/practicum-metrics/internal/agent/storage"

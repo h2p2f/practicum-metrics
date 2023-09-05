@@ -1,8 +1,9 @@
 package config
 
 import (
-	"go.uber.org/zap"
 	"net"
+
+	"go.uber.org/zap"
 )
 
 // ipLoader - function of loading IP address

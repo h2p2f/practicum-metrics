@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/mem"
 	"log"
 	"math/rand"
 	"runtime"
+
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 )
 
 // RuntimeMetricsMonitor is a method of the MetricStorage structure that collects metrics from runtime.

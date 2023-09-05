@@ -1,11 +1,12 @@
 package ipcheckermiddleware
 
 import (
-	"go.uber.org/zap/zaptest"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/zap/zaptest"
 )
 
 func TestIpCheckMiddleware(t *testing.T) {

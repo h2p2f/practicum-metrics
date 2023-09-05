@@ -3,8 +3,9 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"go.uber.org/zap"
 	"os"
+
+	"go.uber.org/zap"
 )
 
 // isSet is a function that checks if the flag is set.

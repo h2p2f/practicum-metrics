@@ -4,10 +4,12 @@ package grpcserver
 
 import (
 	"context"
-	pb "github.com/h2p2f/practicum-metrics/proto"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
 // Updater interface for updating metrics

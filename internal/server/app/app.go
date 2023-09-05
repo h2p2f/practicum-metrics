@@ -7,10 +7,6 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
-	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/middlewares"
-	pb "github.com/h2p2f/practicum-metrics/proto"
-	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -19,12 +15,16 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/middlewares"
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/filestorage"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/inmemorystorage"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/postgrestorage"
+	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
 // DataBaser interface for working with storage

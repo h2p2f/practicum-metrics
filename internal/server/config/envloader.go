@@ -1,10 +1,11 @@
 package config
 
 import (
-	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // envLoader - function of loading configuration from environment variables

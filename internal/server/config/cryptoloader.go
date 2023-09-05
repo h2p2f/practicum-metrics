@@ -4,8 +4,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"go.uber.org/zap"
 	"os"
+
+	"go.uber.org/zap"
 )
 
 // cryptoLoader - function of loading crypto key

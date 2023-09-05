@@ -1,8 +1,9 @@
 package config
 
 import (
-	"go.uber.org/zap"
 	"net"
+
+	"go.uber.org/zap"
 )
 
 func (config *ServerConfig) subnetLoader(logger *zap.Logger) {
