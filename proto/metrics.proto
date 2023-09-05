@@ -17,7 +17,6 @@ message UpdateMetricRequest {
 
 message UpdateMetricResponse {
   Metric metric = 1;
-  bool success = 2;
 }
 
 message UpdateMetricsRequest {
@@ -25,7 +24,6 @@ message UpdateMetricsRequest {
 }
 
 message UpdateMetricsResponse {
-  bool success = 1;
 }
 
 service MetricsService {

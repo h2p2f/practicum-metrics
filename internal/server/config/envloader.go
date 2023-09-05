@@ -1,10 +1,11 @@
 package config
 
 import (
-	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // envLoader - function of loading configuration from environment variables
@@ -36,6 +37,10 @@ func (config *ServerConfig) envLoader(logger *zap.Logger) {
 	}
 	if envKey := os.Getenv("KEY"); envKey != "" {
 		config.HTTP.Key = envKey
+	}
+
+	if envSubnet := os.Getenv("TRUSTED_SUBNET"); envSubnet != "" {
+		config.HTTP.TrustSubnetString = envSubnet
 	}
 
 }

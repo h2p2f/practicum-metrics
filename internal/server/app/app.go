@@ -7,9 +7,6 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
-	pb "github.com/h2p2f/practicum-metrics/proto"
-	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -18,12 +15,16 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 
 	"github.com/h2p2f/practicum-metrics/internal/server/config"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver"
+	"github.com/h2p2f/practicum-metrics/internal/server/grpcserver/middlewares"
 	"github.com/h2p2f/practicum-metrics/internal/server/httpserver"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/filestorage"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/inmemorystorage"
 	"github.com/h2p2f/practicum-metrics/internal/server/storage/postgrestorage"
+	pb "github.com/h2p2f/practicum-metrics/proto"
 )
 
 // DataBaser interface for working with storage
@@ -98,16 +99,22 @@ func Run(sigint chan os.Signal, connectionsClosed chan<- struct{}) {
 			logger.Fatal("listen", zap.Error(err))
 		}
 	}()
+	// create grpc server
 	logger.Info("Started grpc server", zap.String("address", conf.GRPC.Address))
 	listen, err := net.Listen("tcp", conf.GRPC.Address)
 	if err != nil {
 		logger.Fatal("listen", zap.Error(err))
 	}
+	// create grpc server with middlewares
+	var opts []grpc.ServerOption
+	//opts = middlewares.WithLogging(logger, opts)
+	//opts = middlewares.WithCheckingIP(conf.HTTP.TrustSubnet, opts)
+	opts = middlewares.WithChekingIPAndLogging(logger, conf.HTTP.TrustSubnet, opts)
+	grpcServer := grpc.NewServer(opts...)
 
-	grpcServer := grpc.NewServer()
 	grpcMetrics := grpcserver.NewServer(db, logger)
 	pb.RegisterMetricsServiceServer(grpcServer, grpcMetrics)
-
+	// start grpc server
 	go func() {
 		if err := grpcServer.Serve(listen); err != nil {
 			logger.Fatal("listen", zap.Error(err))

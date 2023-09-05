@@ -1,8 +1,9 @@
 package config
 
 import (
-	"go.uber.org/zap/zaptest"
 	"testing"
+
+	"go.uber.org/zap/zaptest"
 )
 
 func TestCryptoLoader(t *testing.T) {

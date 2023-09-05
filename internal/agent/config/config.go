@@ -8,9 +8,8 @@ import (
 	"os"
 	"time"
 
-	"go.uber.org/zap/zapcore"
-
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // AgentConfig - a structure that describes the agent configuration.

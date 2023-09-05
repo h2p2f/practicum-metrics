@@ -1,10 +1,11 @@
 package config
 
 import (
-	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // envLoader - function of loading configuration from environment variables
@@ -45,6 +46,9 @@ func (config *AgentConfig) envLoader(logger *zap.Logger) {
 	// if the path to the key is set in the environment variable - rewrite
 	if envKryptoKey := os.Getenv("CRYPTO_KEY"); envKryptoKey != "" {
 		config.KeyFile = envKryptoKey
+	}
+	if useGRPC := os.Getenv("USE_GRPC"); useGRPC != "" {
+		config.UseGRPC, _ = strconv.ParseBool(useGRPC)
 	}
 	logger.Debug("Config loaded from environment variables")
 }

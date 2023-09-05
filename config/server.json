@@ -4,5 +4,6 @@
   "store_interval": "10s",
   "store_file": "/tmp/metrics-db.json",
   "database_dsn": "postgres://practicum:yandex@localhost:5432/postgres?sslmode=disable",
-  "crypto_key": "./crypto/private.rsa"
+  "crypto_key": "./crypto/private.rsa",
+  "trusted_subnet": "192.168.5.0/24"
 }
